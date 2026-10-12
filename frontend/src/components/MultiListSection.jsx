@@ -120,12 +120,12 @@ export default function MultiListSection({ articles = [] }) {
                     </ul>
 
                     <h4 className="font-['Prompt',sans-serif] text-[20px] sm:text-[22px] font-semibold text-[#101010] leading-[1.4] mb-[10px] group-hover:text-[#ff4c60] transition-colors">
-                      <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
+                      <a href={`/post-detail?slug=${item.slug}`}>{item.title}</a>
                     </h4>
 
                     <div className="flex items-center gap-[20px]">
                       <a
-                        href={`/post-detail.html?slug=${item.slug}`}
+                        href={`/post-detail?slug=${item.slug}`}
                         className="text-[#ff4c60] text-[14px] font-semibold inline-flex items-center gap-[6px] hover:tracking-[0.5px] transition-all"
                       >
                         <span>View Details</span>
@@ -140,7 +140,7 @@ export default function MultiListSection({ articles = [] }) {
 
                   {/* Image Thumbnail Column */}
                   <a
-                    href={`/post-detail.html?slug=${item.slug}`}
+                    href={`/post-detail?slug=${item.slug}`}
                     className="flex-shrink-0 w-[110px] h-[90px] rounded-[8px] overflow-hidden block bg-gray-100"
                   >
                     <img

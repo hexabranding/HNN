@@ -36,7 +36,7 @@ export default function AuthorBanner() {
             </p>
 
             <a
-              href="/contact.html"
+              href="/contact"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#c91f26] hover:bg-[#a8191f] text-white font-bold text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/25 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
             >
               <span>Become An Author</span>

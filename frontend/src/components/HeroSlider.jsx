@@ -56,7 +56,7 @@ export default function HeroSlider({ articles = [] }) {
               <div className="relative z-[2] h-full flex items-center px-[8%] max-w-[750px]">
                 <h1 className="text-3xl sm:text-5xl lg:text-[48px] font-bold text-white font-prompt leading-[1.2] drop-shadow-sm">
                   <a
-                    href={`/post-detail.html?slug=${item.slug}`}
+                    href={`/post-detail?slug=${item.slug}`}
                     className="hover:text-red-400 transition-colors"
                   >
                     {item.title}

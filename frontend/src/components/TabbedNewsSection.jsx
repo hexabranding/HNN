@@ -84,7 +84,7 @@ export default function TabbedNewsSection({ allArticles = [] }) {
 
                   {/* Image matching .blog-grid-3 .image */}
                   <a
-                    href={`/post-detail.html?slug=${article.slug || ''}`}
+                    href={`/post-detail?slug=${article.slug || ''}`}
                     className="block w-full h-[280px] overflow-hidden bg-gray-100"
                   >
                     <img
@@ -102,7 +102,7 @@ export default function TabbedNewsSection({ allArticles = [] }) {
                       <ul className="flex items-center gap-[15px] text-[13px] text-[#101010]/50 mb-[12px] p-0 list-none">
                         <li>
                           <a
-                            href="/author.html"
+                            href="/author"
                             className="flex items-center gap-[6px] text-inherit hover:text-[#ff4c60] transition-colors"
                           >
                             <img
@@ -124,7 +124,7 @@ export default function TabbedNewsSection({ allArticles = [] }) {
                       {/* Heading Title matching h4 */}
                       <h4 className="font-['Prompt',sans-serif] text-[24px] font-semibold text-[#101010] leading-[1.4] mb-[15px] line-clamp-2">
                         <a
-                          href={`/post-detail.html?slug=${article.slug || ''}`}
+                          href={`/post-detail?slug=${article.slug || ''}`}
                           className="hover:text-[#ff4c60] transition-colors"
                         >
                           {article.title}
@@ -135,7 +135,7 @@ export default function TabbedNewsSection({ allArticles = [] }) {
                     {/* Bottom Area matching .bottom-area & .arrow-btn */}
                     <div className="flex items-center justify-between">
                       <a
-                        href={`/post-detail.html?slug=${article.slug || ''}`}
+                        href={`/post-detail?slug=${article.slug || ''}`}
                         className="text-[#ff4c60] text-[14px] font-semibold inline-flex items-center gap-[6px] hover:tracking-[0.5px] transition-all"
                       >
                         <span>View Details</span>

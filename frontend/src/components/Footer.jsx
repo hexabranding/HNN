@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { STATIC_EDITOR_CHOICE } from '../data/staticHomeData';
-import { formatImageUrl } from '../services/api';
 
 export default function Footer({ topArticles = [] }) {
   const [email, setEmail] = useState('');
@@ -13,151 +11,212 @@ export default function Footer({ topArticles = [] }) {
     setTimeout(() => {
       setEmail('');
       setSubscribed(false);
-    }, 5000);
+    }, 4000);
   };
 
-  const picks = (topArticles && topArticles.length >= 2)
-    ? topArticles.slice(0, 2)
-    : STATIC_EDITOR_CHOICE.slice(0, 2);
+  const defaultTopArticles = [
+    {
+      title: 'Our Begin Now To Being What You Will Be.',
+      date: 'Jul 02, 2026',
+      comments: '520 Comment',
+      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=120&q=80',
+      slug: 'our-begin-now-to-being-what-you-will-be',
+    },
+    {
+      title: 'Our Begin Now To Being What You Will Be.',
+      date: 'Jul 11, 2026',
+      comments: '454 Comment',
+      image: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=120&q=80',
+      slug: 'our-begin-now-to-being-what-you-will-be-2',
+    },
+  ];
+
+  const articlesToDisplay =
+    topArticles && topArticles.length >= 2
+      ? topArticles.slice(0, 2).map((a, i) => ({
+          title: a.title || defaultTopArticles[i].title,
+          date: a.date || defaultTopArticles[i].date,
+          comments: `${a.comments || 500} Comment`,
+          image: a.image || defaultTopArticles[i].image,
+          slug: a.slug || `post-${i + 1}`,
+        }))
+      : defaultTopArticles;
 
   return (
-    <footer className="bg-[#111111] text-gray-400 pt-16 pb-8 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-gray-800">
-          {/* Col 1: Brand & Newsletter */}
-          <div className="lg:col-span-4 space-y-4">
-            <img
-              src="/images/logo%20hexa.png"
-              alt="HEXA NEWS"
-              className="h-16 w-auto object-contain brightness-110"
-            />
-            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-              HEXA NEWS delivers credible, fearless, and insightful coverage across politics, diaspora, economy, and culture.
-            </p>
-
-            <form onSubmit={handleSubscribe} className="pt-2">
-              <p className="text-xs font-semibold text-gray-300 mb-2">
-                Get our best stories delivered to your inbox.
-              </p>
-              <div className="flex rounded-lg overflow-hidden border border-gray-700 focus-within:border-[#c91f26]">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address..."
-                  className="w-full bg-[#1c1c1f] px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-[#c91f26] hover:bg-[#a8191f] text-white px-4 text-xs font-bold transition flex-shrink-0"
-                >
-                  Subscribe
-                </button>
-              </div>
-              {subscribed && (
-                <p className="text-xs text-green-400 mt-2 font-medium">
-                  ✓ Thank you! You've been subscribed to our newsletter.
-                </p>
-              )}
-            </form>
-          </div>
-
-          {/* Col 2: Top Articles */}
-          <div className="lg:col-span-4 space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white font-prompt border-b border-gray-800 pb-2">
-              Top Articles This Week
-            </h4>
-            <div className="space-y-3.5">
-              {picks.map((item, idx) => (
-                <a
-                  key={item._id || item.slug || idx}
-                  href={`/post-detail.html?slug=${item.slug}`}
-                  className="flex gap-3.5 items-center group"
-                >
+    <footer className="footer style-1 relative overflow-hidden bg-[linear-gradient(135deg,#0c1118_0%,#151d29_55%,#101820_100%)] text-white/70 w-full before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-[4px] before:bg-[linear-gradient(90deg,#ff4c60,#ff9b78,#548f6f)] after:content-[''] after:absolute after:w-[430px] after:h-[430px] after:-right-[180px] after:-top-[250px] after:rounded-full after:bg-[rgba(255,76,96,0.08)] after:pointer-events-none">
+      <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Main Widget Area */}
+        <div className="pt-[90px] pb-[72px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
+            {/* Col 1: Brand Info & Newsletter (lg:col-span-3) */}
+            <div className="lg:col-span-3 max-w-[290px]">
+              <div className="mb-[24px]">
+                <a href="/" className="inline-block">
                   <img
-                    src={formatImageUrl(item.image)}
-                    alt={item.title}
-                    className="w-16 h-14 rounded object-cover flex-shrink-0 bg-gray-800"
+                    src="/images/logo%20hexa.png"
+                    alt="HEXA NEWS"
+                    className="h-[75px] md:h-[80px] w-auto object-contain"
                   />
-                  <div className="flex-1 min-w-0">
-                    <h5 className="text-xs font-semibold text-gray-200 group-hover:text-[#c91f26] transition line-clamp-2 leading-snug">
-                      {item.title}
-                    </h5>
-                    <span className="text-[11px] text-gray-500 mt-1 block">
-                      <i className="bi bi-calendar3 mr-1"></i> {item.date || 'Jul 2026'}
-                    </span>
-                  </div>
                 </a>
-              ))}
+              </div>
+              <h3 className="font-['Prompt',sans-serif] text-[18px] text-white font-semibold leading-[1.45] mb-[15px]">
+                Stay informed. Stay ahead.
+              </h3>
+              <div>
+                <p className="text-[14px] text-white/70 mb-[10px] leading-relaxed">
+                  Get our best stories delivered to your inbox.
+                </p>
+                <form
+                  onSubmit={handleSubscribe}
+                  className="flex rounded-[6px] overflow-hidden border border-white/[0.14] bg-white/[0.06] transition-colors focus-within:border-[#ff4c60]"
+                >
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter Your Email..."
+                    className="flex-1 min-w-0 px-3 py-2 bg-transparent text-white text-[13px] font-['Inter',sans-serif] outline-none placeholder:text-white/55"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#ff4c60] text-white font-['Prompt',sans-serif] font-semibold text-[13px] hover:bg-[#548f6f] transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    Subscribe
+                  </button>
+                </form>
+                {subscribed && (
+                  <p className="text-xs text-[#548f6f] mt-2 font-medium">
+                    ✓ Subscribed successfully!
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Col 3: Quick Links */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white font-prompt border-b border-gray-800 pb-2">
-              Quick Links
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li><a href="/" className="hover:text-white transition">Home</a></li>
-              <li><a href="/sports.html" className="hover:text-white transition">Sports</a></li>
-              <li><a href="/health.html" className="hover:text-white transition">Health</a></li>
-              <li><a href="/technology.html" className="hover:text-white transition">Technology</a></li>
-              <li><a href="/business.html" className="hover:text-white transition">Business</a></li>
-              <li><a href="/contact.html" className="hover:text-white transition">Contact</a></li>
-              <li><a href="/admin" className="hover:text-[#c91f26] transition font-bold">Admin Portal</a></li>
-            </ul>
-          </div>
+            {/* Col 2: Top Article This Week (lg:col-span-4) */}
+            <div className="lg:col-span-4 lg:pl-4">
+              <h4 className="relative text-[17px] tracking-[0.02em] text-white mb-[24px] pb-[14px] border-b border-white/10 font-semibold font-['Prompt',sans-serif] after:content-[''] after:absolute after:left-0 after:-bottom-[1px] after:w-[42px] after:h-[2px] after:bg-[#ff4c60]">
+                Top Article This Week
+              </h4>
+              <div className="space-y-[14px]">
+                {articlesToDisplay.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex gap-[12px] p-[10px] border border-white/[0.08] rounded-[10px] bg-white/[0.035] hover:-translate-y-[3px] hover:border-[#ff4c60]/50 hover:bg-white/[0.06] transition-all duration-300 group"
+                  >
+                    <a
+                      href={`/post-detail?slug=${item.slug}`}
+                      className="w-[80px] h-[70px] rounded-[6px] overflow-hidden flex-shrink-0 bg-gray-800 block"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    </a>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <h6 className="font-['Prompt',sans-serif] text-[15px] font-semibold text-white/80 leading-[1.4] mb-[6px] group-hover:text-[#ff4c60] transition-colors line-clamp-2">
+                        <a href={`/post-detail?slug=${item.slug}`}>{item.title}</a>
+                      </h6>
+                      <ul className="flex items-center gap-[12px] text-[12px] text-white/40 list-none p-0 m-0">
+                        <li className="flex items-center gap-[4px]">
+                          <i className="bi bi-calendar3 text-[11px]"></i>
+                          <span>{item.date}</span>
+                        </li>
+                        <li className="flex items-center gap-[4px]">
+                          <i className="bi bi-chat text-[11px]"></i>
+                          <span>{item.comments}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          {/* Col 4: Social */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white font-prompt border-b border-gray-800 pb-2">
-              Follow Us
-            </h4>
-            <ul className="space-y-2.5 text-xs">
-              <li>
-                <a href="#" className="flex items-center gap-2 hover:text-white transition">
-                  <i className="bi bi-facebook text-[#c91f26]"></i> Facebook
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 hover:text-white transition">
-                  <i className="bi bi-twitter-x text-[#c91f26]"></i> Twitter
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 hover:text-white transition">
-                  <i className="bi bi-pinterest text-[#c91f26]"></i> Pinterest
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 hover:text-white transition">
-                  <i className="bi bi-instagram text-[#c91f26]"></i> Instagram
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 hover:text-white transition">
-                  <i className="bi bi-youtube text-[#c91f26]"></i> YouTube
-                </a>
-              </li>
-            </ul>
+            {/* Col 3: Quick Link (lg:col-span-3) */}
+            <div className="lg:col-span-3 lg:pl-6">
+              <h4 className="relative text-[17px] tracking-[0.02em] text-white mb-[24px] pb-[14px] border-b border-white/10 font-semibold font-['Prompt',sans-serif] after:content-[''] after:absolute after:left-0 after:-bottom-[1px] after:w-[42px] after:h-[2px] after:bg-[#ff4c60]">
+                Quick Link
+              </h4>
+              <ul className="space-y-[12px] list-none p-0 m-0">
+                {['International News', 'Post', 'Feature', 'Contact'].map((linkName, i) => (
+                  <li key={i}>
+                    <a
+                      href={linkName === 'Contact' ? '/contact' : '#'}
+                      className="text-[14px] text-white/60 hover:text-white transition-all duration-300 flex items-center gap-[6px] group"
+                    >
+                      <span className="text-[#ff4c60] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+                        →
+                      </span>
+                      <span className="group-hover:translate-x-1 transition-transform duration-200">
+                        {linkName}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Col 4: Social Media (lg:col-span-2) */}
+            <div className="lg:col-span-2">
+              <h4 className="relative text-[17px] tracking-[0.02em] text-white mb-[24px] pb-[14px] border-b border-white/10 font-semibold font-['Prompt',sans-serif] after:content-[''] after:absolute after:left-0 after:-bottom-[1px] after:w-[42px] after:h-[2px] after:bg-[#ff4c60]">
+                Social Media
+              </h4>
+              <ul className="space-y-[10px] list-none p-0 m-0">
+                {[
+                  { name: 'Facebook', icon: 'bi-facebook' },
+                  { name: 'Twitter', icon: 'bi-twitter-x' },
+                  { name: 'Pinterest', icon: 'bi-pinterest' },
+                  { name: 'Instagram', icon: 'bi-instagram' },
+                ].map((item, i) => (
+                  <li key={i}>
+                    <a
+                      href="#"
+                      className="flex items-center gap-[8px] text-[14px] text-white/60 hover:text-white transition-all duration-300 group"
+                    >
+                      <i
+                        className={`inline-flex items-center justify-center w-[30px] h-[30px] rounded-full text-[14px] text-white bg-white/10 group-hover:bg-[#ff4c60] group-hover:-translate-y-0.5 transition-all duration-300 bi ${item.icon}`}
+                      ></i>
+                      <span>{item.name}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Bar & Copyright */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
-          <p>
-            &copy; {new Date().getFullYear()} HEXA NEWS. Powered by{' '}
-            <span className="text-[#c91f26] font-semibold">Hexa Branding</span>.
-          </p>
+        {/* Help Center Bar */}
+        <div className="py-[22px] border-t border-b border-white/[0.08] flex flex-col md:flex-row justify-between items-center gap-4">
+          <h5 className="font-['Prompt',sans-serif] text-[18px] font-semibold text-white">
+            <a href="/contact" className="hover:text-[#ff4c60] transition-colors">
+              Help Center
+            </a>
+          </h5>
+          <ul className="flex flex-wrap items-center gap-[25px] list-none p-0 m-0">
+            {['Privacy Policy', 'Terms & Conditions', 'Services', 'Help'].map((item, i) => (
+              <li key={i}>
+                <a
+                  href={item === 'Help' ? '/contact' : '#'}
+                  className="text-[14px] text-white/50 hover:text-[#ff4c60] transition-colors duration-200"
+                >
+                  {item}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <div className="flex gap-4">
-            <a href="/contact.html" className="hover:text-gray-300">Privacy Policy</a>
-            <span>•</span>
-            <a href="/contact.html" className="hover:text-gray-300">Terms & Conditions</a>
-            <span>•</span>
-            <a href="/contact.html" className="hover:text-gray-300">Help Center</a>
-          </div>
+        {/* Copyright Area */}
+        <div className="pt-[30px] pb-[30px] text-center">
+          <p className="text-[14px] text-white/40 m-0">
+            &copy; 2026 HEXA NEWS is Proudly Powered by{' '}
+            <a href="#" className="text-[#ff4c60] hover:underline font-medium">
+              Hexa Branding
+            </a>
+          </p>
         </div>
       </div>
     </footer>

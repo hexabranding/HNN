@@ -21,10 +21,10 @@ export default function BackToTop() {
     <button
       type="button"
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[#c91f26] hover:bg-[#a8191f] text-white shadow-xl flex items-center justify-center transition-all duration-300 transform hover:-translate-y-1 focus:outline-none ring-4 ring-red-500/20"
+      className="fixed bottom-[30px] right-[30px] z-50 w-[44px] h-[44px] rounded-full bg-[#ff4c60] hover:bg-[#101820] text-white shadow-[0_4px_15px_rgba(255,76,96,0.4)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex items-center justify-center transition-all duration-300 cursor-pointer"
       aria-label="Back to top"
     >
-      <i className="bi bi-chevron-up text-lg"></i>
+      <i className="bi bi-arrow-up text-[18px]"></i>
     </button>
   );
 }

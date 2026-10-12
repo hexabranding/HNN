@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -60,8 +61,8 @@ export default function CategorySlider({ categories = [] }) {
               <SwiperSlide key={idx} className="h-auto">
                 <div className="category-1 border border-[#eee] rounded-[10px] overflow-hidden bg-white transition-all duration-400 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] group flex flex-col h-full text-center">
                   {/* Category Image */}
-                  <a
-                    href={`/${cat.slug}.html`}
+                  <Link
+                    to={`/${cat.slug}`}
                     className="block w-full h-[200px] overflow-hidden bg-gray-100"
                   >
                     <img
@@ -70,12 +71,12 @@ export default function CategorySlider({ categories = [] }) {
                       className="w-full h-full object-cover transition-transform duration-550 group-hover:scale-[1.08]"
                       loading="lazy"
                     />
-                  </a>
+                  </Link>
 
                   {/* Category Content */}
                   <div className="p-[18px] text-center flex-1 flex flex-col justify-between">
                     <h4 className="font-['Prompt',sans-serif] text-[22px] font-semibold text-[#101010] mb-[8px] group-hover:text-[#ff4c60] transition-colors leading-[1.4]">
-                      <a href={`/${cat.slug}.html`}>{cat.name}</a>
+                      <Link to={`/${cat.slug}`}>{cat.name}</Link>
                     </h4>
 
                     <ul className="flex items-center justify-center gap-[20px] text-[13px] text-[#101010]/50 list-none p-0 m-0">

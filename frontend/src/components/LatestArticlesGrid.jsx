@@ -25,7 +25,7 @@ export default function LatestArticlesGrid({ articles = [] }) {
           </h2>
           <div className="mt-3">
             <a
-              href="/blog-classic.html"
+              href="/blog-classic"
               className="font-['Prompt',sans-serif] text-[18px] font-medium text-[#ff4c60] inline-flex items-center hover:tracking-[0.5px] transition-all group"
             >
               <span>View Article</span>
@@ -57,7 +57,7 @@ export default function LatestArticlesGrid({ articles = [] }) {
 
                 {/* Image matching .blog-grid-1 .image */}
                 <a
-                  href={`/post-detail.html?slug=${item.slug}`}
+                  href={`/post-detail?slug=${item.slug}`}
                   className="block w-full h-[250px] overflow-hidden bg-gray-100"
                 >
                   <img
@@ -71,12 +71,12 @@ export default function LatestArticlesGrid({ articles = [] }) {
                 {/* Content matching .blog-grid-1 .content */}
                 <div className="p-[22px] flex-1 flex flex-col justify-between">
                   <h4 className="font-['Prompt',sans-serif] text-[24px] font-semibold text-[#101010] leading-[1.4] mb-[15px] group-hover:text-[#ff4c60] transition-colors line-clamp-2">
-                    <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
+                    <a href={`/post-detail?slug=${item.slug}`}>{item.title}</a>
                   </h4>
 
                   <div className="flex items-center">
                     <a
-                      href={`/post-detail.html?slug=${item.slug}`}
+                      href={`/post-detail?slug=${item.slug}`}
                       className="text-[#ff4c60] text-[14px] font-semibold inline-flex items-center gap-[6px] hover:tracking-[0.5px] transition-all"
                     >
                       <span>View Details</span>

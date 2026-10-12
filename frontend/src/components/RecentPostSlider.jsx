@@ -69,7 +69,7 @@ export default function RecentPostSlider({ articles = [] }) {
 
                       {/* Title */}
                       <h4 className="font-['Prompt',sans-serif] text-[24px] font-semibold text-white leading-[1.4] mb-[10px] group-hover:text-[#ff4c60] transition-colors line-clamp-2">
-                        <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
+                        <a href={`/post-detail?slug=${item.slug}`}>{item.title}</a>
                       </h4>
 
                       {/* Metadata */}

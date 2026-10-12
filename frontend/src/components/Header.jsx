@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function Header({ onOpenSearch }) {
   const [isSticky, setIsSticky] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -15,31 +17,43 @@ export default function Header({ onOpenSearch }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close desktop dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDesktopDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const navLinks = [
     { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
     {
       name: 'International News',
       dropdown: [
-        { name: 'Asia', path: '/asia.html' },
-        { name: 'North America', path: '/north-america.html' },
-        { name: 'Antarctica', path: '/antarctica.html' },
-        { name: 'Europe', path: '/europe.html' },
-        { name: 'Australia', path: '/australia.html' },
-        { name: 'South America', path: '/south-america.html' },
-        { name: 'Africa', path: '/africa.html' },
+        { name: 'Asia', path: '/asia' },
+        { name: 'North America', path: '/north-america' },
+        { name: 'Antarctica', path: '/antarctica' },
+        { name: 'Europe', path: '/europe' },
+        { name: 'Australia', path: '/australia' },
+        { name: 'South America', path: '/south-america' },
+        { name: 'Africa', path: '/africa' },
       ],
     },
-    { name: 'Sports', path: '/sports.html' },
-    { name: 'Health', path: '/health.html' },
-    { name: 'Technology', path: '/technology.html' },
-    { name: 'Business', path: '/business.html' },
-    { name: 'Contact', path: '/contact.html' },
+    { name: 'Sports', path: '/sports' },
+    { name: 'Health', path: '/health' },
+    { name: 'Technology', path: '/technology' },
+    { name: 'Business', path: '/business' },
+    { name: 'Contact', path: '/contact' },
   ];
 
   return (
     <>
       <header
-        className={`w-full z-40 transition-all duration-300 ${
+        className={`w-full relative z-50 transition-all duration-300 ${
           isSticky
             ? 'fixed top-0 left-0 bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100 py-3'
             : 'bg-white border-y border-gray-200 py-3.5'
@@ -47,8 +61,8 @@ export default function Header({ onOpenSearch }) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Left: Menu toggle button & Mobile Logo */}
-            <div className="flex items-center space-x-4">
+            {/* Left: Menu toggle button & Mobile Logo (ONLY visible on responsive / mobile screens, HIDDEN on big desktop screens) */}
+            <div className="flex lg:hidden items-center space-x-4">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
@@ -60,7 +74,7 @@ export default function Header({ onOpenSearch }) {
                 <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
               </button>
 
-              <div className="lg:hidden">
+              <div>
                 <Link to="/" className="inline-block">
                   <img
                     src="/images/logo%20hexa.png"
@@ -78,26 +92,52 @@ export default function Header({ onOpenSearch }) {
                   return (
                     <div
                       key={idx}
+                      ref={dropdownRef}
                       className="relative group py-2"
-                      onMouseEnter={() => setDropdownOpen(true)}
-                      onMouseLeave={() => setDropdownOpen(false)}
+                      onMouseEnter={() => setDesktopDropdownOpen(true)}
+                      onMouseLeave={() => setDesktopDropdownOpen(false)}
                     >
-                      <button className="flex items-center gap-1.5 text-sm font-semibold tracking-wide text-gray-800 hover:text-[#c91f26] transition py-1">
+                      <button
+                        type="button"
+                        onClick={() => setDesktopDropdownOpen((prev) => !prev)}
+                        className={`flex items-center gap-1.5 text-sm font-semibold tracking-wide transition py-1 cursor-pointer ${
+                          desktopDropdownOpen ? 'text-[#c91f26]' : 'text-gray-800 hover:text-[#c91f26]'
+                        }`}
+                        aria-expanded={desktopDropdownOpen}
+                      >
                         <span>{item.name}</span>
-                        <i className="bi bi-chevron-down text-xs transition-transform group-hover:rotate-180"></i>
+                        <i
+                          className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
+                            desktopDropdownOpen ? 'rotate-180 text-[#c91f26]' : 'group-hover:rotate-180'
+                          }`}
+                        ></i>
                       </button>
 
                       {/* Dropdown menu */}
-                      <div className="absolute left-0 top-full w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-0 translate-y-1">
-                        {item.dropdown.map((sub, sIdx) => (
-                          <a
-                            key={sIdx}
-                            href={sub.path}
-                            className="block px-4 py-2 text-xs font-medium text-gray-700 hover:bg-red-50 hover:text-[#c91f26] transition"
-                          >
-                            {sub.name}
-                          </a>
-                        ))}
+                      <div
+                        className={`absolute left-0 top-full pt-1.5 z-50 ${
+                          desktopDropdownOpen ? 'block' : 'hidden group-hover:block'
+                        }`}
+                      >
+                        <div className="w-56 bg-white rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-gray-100 py-2.5 overflow-hidden">
+                          {item.dropdown.map((sub, sIdx) => {
+                            const isSubActive = location.pathname === sub.path;
+                            return (
+                              <Link
+                                key={sIdx}
+                                to={sub.path}
+                                onClick={() => setDesktopDropdownOpen(false)}
+                                className={`block px-5 py-2.5 text-sm font-medium transition-all ${
+                                  isSubActive
+                                    ? 'text-[#c91f26] bg-red-50/70 font-semibold'
+                                    : 'text-gray-700 hover:text-[#c91f26] hover:bg-red-50/50 hover:pl-6'
+                                }`}
+                              >
+                                {sub.name}
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   );
@@ -167,43 +207,53 @@ export default function Header({ onOpenSearch }) {
             </div>
 
             <nav className="mt-6 flex-1 space-y-3 overflow-y-auto">
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5"
-              >
-                Home
-              </Link>
-
-              <div className="py-1">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5"
-                >
-                  <span>International News</span>
-                  <i className={`bi bi-chevron-down text-xs transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}></i>
-                </button>
-                {dropdownOpen && (
-                  <div className="pl-4 space-y-2 mt-2 border-l-2 border-red-100">
-                    {navLinks[1].dropdown.map((sub, i) => (
-                      <a
-                        key={i}
-                        href={sub.path}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block text-xs font-medium text-gray-600 hover:text-[#c91f26]"
+              {navLinks.map((item, idx) => {
+                if (item.dropdown) {
+                  return (
+                    <div key={idx} className="py-1">
+                      <button
+                        onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+                        className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5 cursor-pointer"
                       >
-                        {sub.name}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
+                        <span>{item.name}</span>
+                        <i
+                          className={`bi bi-chevron-down text-xs transition-transform ${
+                            mobileDropdownOpen ? 'rotate-180' : ''
+                          }`}
+                        ></i>
+                      </button>
+                      {mobileDropdownOpen && (
+                        <div className="pl-4 space-y-2 mt-2 border-l-2 border-red-100">
+                          {item.dropdown.map((sub, sIdx) => (
+                            <Link
+                              key={sIdx}
+                              to={sub.path}
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                setMobileDropdownOpen(false);
+                              }}
+                              className="block text-xs font-medium text-gray-600 hover:text-[#c91f26]"
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
 
-              <a href="/sports.html" className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5">Sports</a>
-              <a href="/health.html" className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5">Health</a>
-              <a href="/technology.html" className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5">Technology</a>
-              <a href="/business.html" className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5">Business</a>
-              <a href="/contact.html" className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5">Contact</a>
+                return (
+                  <Link
+                    key={idx}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5"
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="pt-6 border-t border-gray-100">

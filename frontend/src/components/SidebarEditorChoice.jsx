@@ -21,7 +21,7 @@ export default function SidebarEditorChoice({ articles = [] }) {
               className="flex gap-[12px] pb-[18px] mb-[18px] border-b border-[#eee] last:border-b-0 last:mb-0 last:pb-0 group"
             >
               <a
-                href={`/post-detail.html?slug=${item.slug}`}
+                href={`/post-detail?slug=${item.slug}`}
                 className="w-[80px] h-[70px] rounded-[6px] overflow-hidden flex-shrink-0 bg-gray-100 block"
               >
                 <img
@@ -34,7 +34,7 @@ export default function SidebarEditorChoice({ articles = [] }) {
 
               <div className="flex-1 min-w-0">
                 <h6 className="font-['Prompt',sans-serif] text-[15px] font-semibold text-[#101010] leading-[1.4] mb-[6px] group-hover:text-[#ff4c60] transition-colors line-clamp-2">
-                  <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
+                  <a href={`/post-detail?slug=${item.slug}`}>{item.title}</a>
                 </h6>
                 <ul className="flex items-center gap-[12px] text-[12px] text-[#101010]/50 list-none p-0">
                   <li className="flex items-center gap-[4px]">

@@ -105,8 +105,8 @@ export default function HomePage() {
         <NewsletterSection />
       </main>
 
-      {/* Footer (4 Columns + Copyright) */}
-      <Footer topArticles={allArticles} />
+      {/* Footer (4 Columns + Help Center + Copyright) */}
+      <Footer />
 
       {/* Floating Back to Top Button */}
       <BackToTop />

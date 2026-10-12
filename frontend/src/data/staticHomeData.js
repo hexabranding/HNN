@@ -419,13 +419,13 @@ export const STATIC_EDITOR_CHOICE = [
 ];
 
 export const STATIC_CATEGORIES = [
-  { name: 'Sports', count: '120 Article', views: '4.2k View', image: 'https://images.unsplash.com/photo-1461896836934-bd45ba8fcf9b?w=400&q=80', slug: 'sports' },
-  { name: 'Health', count: '95 Article', views: '3.8k View', image: 'https://images.unsplash.com/photo-1505576399279-0d754c0ce1c8?w=400&q=80', slug: 'health' },
-  { name: 'Technology', count: '150 Article', views: '5.6k View', image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80', slug: 'technology' },
-  { name: 'Business', count: '88 Article', views: '3.1k View', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&q=80', slug: 'business' },
-  { name: 'Asia', count: '130 Article', views: '4.5k View', image: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&q=80', slug: 'asia' },
-  { name: 'Europe', count: '110 Article', views: '3.9k View', image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400&q=80', slug: 'europe' },
-  { name: 'Africa', count: '75 Article', views: '2.8k View', image: 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=400&q=80', slug: 'africa' },
+  { name: 'Business', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&q=80', slug: 'business' },
+  { name: 'Asia', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&q=80', slug: 'asia' },
+  { name: 'Europe', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400&q=80', slug: 'europe' },
+  { name: 'Africa', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=400&q=80', slug: 'africa' },
+  { name: 'Sports', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1461896836934-bd45ba8fcf9b?w=400&q=80', slug: 'sports' },
+  { name: 'Health', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1505576399279-0d754c0ce1c8?w=400&q=80', slug: 'health' },
+  { name: 'Technology', count: '0 Articles', views: '0 View', image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80', slug: 'technology' },
 ];
 
 export const STATIC_LATEST_ARTICLES = [

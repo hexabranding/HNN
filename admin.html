@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEXA NEWS - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="images/logo hexa.png">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#111111;color:#222;min-height:100vh}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f5f5f5}::-webkit-scrollbar-thumb{background:#c91f26;border-radius:3px}
+
+        /* Login */
+        .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#111 0%,#1a1a1a 50%,#222 100%)}
+        .login-card{background:#ffffff;border:1px solid #e0e0e0;border-radius:16px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+        .login-card .logo{text-align:center;margin-bottom:32px}
+        .login-card .logo img{height:50px;border-radius:8px}
+        .login-card h2{text-align:center;font-size:22px;font-weight:700;color:#111;margin-bottom:8px}
+        .login-card p{text-align:center;color:#888;font-size:13px;margin-bottom:28px}
+        .form-group{margin-bottom:20px}
+        .form-group label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+        .form-group input,.form-group textarea,.form-group select{width:100%;padding:12px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:8px;color:#111;font-size:14px;transition:.2s}
+        .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:#c91f26;box-shadow:0 0 0 3px rgba(201,31,38,.1);background:#fff}
+        .login-btn{width:100%;padding:13px;background:#c91f26;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
+        .login-btn:hover{background:#a8191f;transform:translateY(-1px)}
+        .login-error{text-align:center;color:#c91f26;font-size:13px;margin-top:12px;display:none}
+
+        /* Dashboard */
+        .admin-layout{display:none;min-height:100vh}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:#111111;border-right:1px solid #222;padding:20px 0;z-index:100;transition:.3s}
+        .sidebar .logo-area{padding:0 20px 24px;border-bottom:1px solid #222;margin-bottom:8px}
+        .sidebar .logo-area img{height:36px;border-radius:6px}
+        .sidebar .logo-area span{color:#c91f26;font-weight:700;font-size:16px;margin-left:8px}
+        .sidebar nav a{display:flex;align-items:center;gap:12px;padding:12px 24px;color:#999;text-decoration:none;font-size:14px;font-weight:500;transition:.2s}
+        .sidebar nav a:hover,.sidebar nav a.active{color:#fff;background:rgba(201,31,38,.12);border-right:3px solid #c91f26}
+        .sidebar nav a i{font-size:18px;width:22px;text-align:center}
+        .sidebar .logout-btn{position:absolute;bottom:20px;left:20px;right:20px;padding:10px;background:rgba(201,31,38,.1);border:1px solid rgba(201,31,38,.25);border-radius:8px;color:#c91f26;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:.2s}
+        .sidebar .logout-btn:hover{background:#c91f26;color:#fff}
+
+        .main-area{margin-left:250px;padding:24px 32px;background:#f5f5f5;min-height:100vh}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+        .top-bar h1{font-size:24px;font-weight:700;color:#111}
+        .top-bar .user-info{display:flex;align-items:center;gap:8px;color:#666;font-size:13px}
+        .top-bar .user-info i{color:#c91f26}
+
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+        .stat-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .stat-card .num{font-size:28px;font-weight:800;color:#c91f26}
+        .stat-card .label{font-size:12px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+        .panel{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .panel-header h3{font-size:18px;font-weight:700;color:#111}
+        .btn{padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+        .btn-primary{background:#c91f26;color:#fff}.btn-primary:hover{background:#a8191f}
+        .btn-success{background:#2e7d32;color:#fff}.btn-success:hover{background:#256525}
+        .btn-danger{background:#c62828;color:#fff}.btn-danger:hover{background:#b71c1c}
+        .btn-sm{padding:5px 12px;font-size:12px}
+        .btn-outline{background:transparent;border:1px solid #ddd;color:#666}.btn-outline:hover{border-color:#c91f26;color:#c91f26}
+
+        .search-box{display:flex;gap:8px;margin-bottom:20px}
+        .search-box input{flex:1;padding:10px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:8px;color:#111;font-size:13px}
+        .search-box input:focus{outline:none;border-color:#c91f26}
+
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;padding:12px 14px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #eee}
+        td{padding:12px 14px;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333}
+        tr:hover{background:#fafafa}
+        td a{color:#111;text-decoration:none;font-weight:600}
+        td a:hover{color:#c91f26;text-decoration:underline}
+        .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+        .badge-green{background:#e8f5e9;color:#2e7d32}
+        .badge-red{background:#ffebee;color:#c91f26}
+        .badge-blue{background:#e3f2fd;color:#1565c0}
+
+        /* Modal */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal-box{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+        .modal-box h3{font-size:18px;font-weight:700;color:#111;margin-bottom:20px}
+        .modal-box .form-group{margin-bottom:16px}
+        .modal-box .form-group label{font-size:12px;color:#888;font-weight:600;margin-bottom:4px;display:block}
+        .modal-box input,.modal-box textarea,.modal-box select{width:100%;padding:10px 12px;background:#f9f9f9;border:1px solid #ddd;border-radius:8px;color:#111;font-size:13px}
+        .modal-box textarea{min-height:120px;resize:vertical}
+        .modal-box select option{background:#fff;color:#111}
+        .modal-box .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+        .modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer}
+        .modal-close:hover{color:#c91f26}
+
+        .image-upload-box{position:relative;border:2px dashed #ddd;border-radius:8px;overflow:hidden;cursor:pointer;transition:.2s;height:44px}
+        .image-upload-box:hover{border-color:#c91f26;background:rgba(201,31,38,.02)}
+        .image-upload-box input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+        .upload-placeholder{text-align:center;padding:6px;color:#999}
+        .upload-placeholder i{font-size:18px;color:#aaa;display:inline;vertical-align:middle}
+        .upload-placeholder p{font-size:12px;font-weight:600;color:#888;display:inline;vertical-align:middle;margin:0 4px}
+        .upload-placeholder span{font-size:10px;color:#bbb;display:block;margin-top:2px}
+        .upload-preview{position:relative;width:100%;height:100%;display:none}
+        .upload-preview img{width:100%;height:100%;object-fit:cover;display:block;min-height:44px}
+        .upload-remove-btn{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;z-index:3}
+        .upload-remove-btn:hover{background:#c91f26}
+        .upload-status{text-align:center;padding:12px;font-size:12px;color:#c91f26;display:none}
+        .upload-status.active{display:block}
+
+        .toast{position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;transform:translateX(120%);transition:.3s}
+        .toast.show{transform:translateX(0)}
+        .toast-success{background:#2e7d32;color:#fff}
+        .toast-error{background:#c62828;color:#fff}
+
+        @media(max-width:992px){.sidebar{display:none}.main-area{margin-left:0}.stats-row{grid-template-columns:repeat(2,1fr)}}
+    </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ===================== LOGIN ===================== -->
+<div class="login-wrap" id="loginWrap">
+    <div class="login-card">
+        <div class="logo">
+            <img src="images/logo hexa.png" alt="HEXA NEWS">
+        </div>
+        <h2>Admin Panel</h2>
+        <p>Sign in to manage your news portal</p>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text" id="loginUser" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+            <div class="login-error" id="loginError"></div>
+        </form>
+    </div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div class="admin-layout" id="adminLayout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-area">
+            <img src="images/logo hexa.png" alt="HEXA">
+            <span>HEXA NEWS</span>
+        </div>
+        <nav>
+            <a href="#" class="active" data-tab="dashboard"><i class="bi bi-grid"></i> Dashboard</a>
+            <a href="#" data-tab="articles"><i class="bi bi-newspaper"></i> Articles</a>
+            <a href="#" data-tab="categories"><i class="bi bi-tags"></i> Categories</a>
+            <a href="#" data-tab="authors"><i class="bi bi-people"></i> Authors</a>
+            <a href="#" data-tab="settings"><i class="bi bi-gear"></i> Settings</a>
+        </nav>
+        <button class="logout-btn" id="logoutBtn"><i class="bi bi-box-arrow-left"></i> Logout</button>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-area">
+        <div class="top-bar">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="user-info"><i class="bi bi-person-circle"></i> <span id="userName">Admin</span></div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content" id="tab-dashboard">
+            <div class="stats-row">
+                <div class="stat-card"><div class="num" id="statArticles">0</div><div class="label">Articles</div></div>
+                <div class="stat-card"><div class="num" id="statCategories">0</div><div class="label">Categories</div></div>
+                <div class="stat-card"><div class="num" id="statAuthors">0</div><div class="label">Authors</div></div>
+                <div class="stat-card"><div class="num" id="statViews">0</div><div class="label">Total Views</div></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3>Recent Articles</h3></div>
+                <div id="recentArticlesTable"></div>
+            </div>
+        </div>
+
+        <!-- Articles Tab -->
+        <div class="tab-content" id="tab-articles" style="display:none">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>All Articles</h3>
+                    <button class="btn btn-primary" onclick="openArticleModal()"><i class="bi bi-plus-lg"></i> New Article</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" placeholder="Search articles..." id="articleSearch" oninput="loadArticles()">
+                </div>
+                <div id="articlesTable"></div>
+            </div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div class="tab-content" id="tab-categories" style="display:none">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Categories</h3>
+                    <button class="btn btn-primary" onclick="openCategoryModal()"><i class="bi bi-plus-lg"></i> New Category</button>
+                </div>
+                <div id="categoriesTable"></div>
+            </div>
+        </div>
+
+        <!-- Authors Tab -->
+        <div class="tab-content" id="tab-authors" style="display:none">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Authors</h3>
+                    <button class="btn btn-primary" onclick="openAuthorModal()"><i class="bi bi-plus-lg"></i> New Author</button>
+                </div>
+                <div id="authorsTable"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="tab-settings" style="display:none">
+            <div class="panel">
+                <div class="panel-header"><h3>Site Settings</h3></div>
+                <div id="settingsForm"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Article Modal -->
+<div class="modal-overlay" id="articleModal">
+    <div class="modal-box" style="position:relative">
+        <button class="modal-close" onclick="closeModal('articleModal')"><i class="bi bi-x-lg"></i></button>
+        <h3 id="articleModalTitle">New Article</h3>
+        <input type="hidden" id="editArticleId">
+        <div class="form-group"><label>Title *</label><input type="text" id="artTitle" placeholder="Article title"></div>
+        <div class="form-row">
+            <div class="form-group"><label>Category *</label><select id="artCategory"></select></div>
+            <div class="form-group"><label>Author</label><input type="text" id="artAuthor" value="Staff Reporter"></div>
+        </div>
+        <div class="form-group"><label>Excerpt</label><textarea id="artExcerpt" rows="2" placeholder="Short description"></textarea></div>
+        <div class="form-group"><label>Content *</label><textarea id="artContent" rows="5" placeholder="Full article content"></textarea></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label><i class="bi bi-link-45deg"></i> Image URL</label>
+                <input type="text" id="artImage" placeholder="Paste image URL here...">
+            </div>
+            <div class="form-group">
+                <label><i class="bi bi-upload"></i> Upload File</label>
+                <div class="image-upload-box" id="imageUploadArea">
+                    <div class="upload-preview" id="uploadPreview" style="display:none">
+                        <img id="uploadPreviewImg" src="" alt="Preview">
+                        <button type="button" class="upload-remove-btn" onclick="removeUploadedImage()"><i class="bi bi-x-circle"></i></button>
+                    </div>
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                        <p>Click or drag image</p>
+                        <span>JPG, PNG, WEBP (max 5MB)</span>
+                    </div>
+                    <input type="file" id="artImageFile" accept="image/*" onchange="handleImageUpload(this)">
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="artTags" placeholder="Tech, AI, News"></div>
+            <div class="form-group"><label>Read Time</label><input type="text" id="artReadTime" value="3 min read"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Featured</label>
+                <select id="artFeatured"><option value="false">No</option><option value="true">Yes</option></select>
+            </div>
+            <div class="form-group">
+                <label>Breaking</label>
+                <select id="artBreaking"><option value="false">No</option><option value="true">Yes</option></select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('articleModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveArticle()">Save Article</button>
+        </div>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="categoryModal">
+    <div class="modal-box" style="position:relative;max-width:450px">
+        <button class="modal-close" onclick="closeModal('categoryModal')"><i class="bi bi-x-lg"></i></button>
+        <h3 id="catModalTitle">New Category</h3>
+        <input type="hidden" id="editCatId">
+        <div class="form-group"><label>ID (slug)</label><input type="text" id="catId" placeholder="e.g. technology"></div>
+        <div class="form-group"><label>Label</label><input type="text" id="catLabel" placeholder="e.g. Technology"></div>
+        <div class="form-group"><label>Slug</label><input type="text" id="catSlug" placeholder="e.g. technology"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('categoryModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Author Modal -->
+<div class="modal-overlay" id="authorModal">
+    <div class="modal-box" style="position:relative;max-width:450px">
+        <button class="modal-close" onclick="closeModal('authorModal')"><i class="bi bi-x-lg"></i></button>
+        <h3>New Author</h3>
+        <div class="form-group"><label>Name</label><input type="text" id="authorName" placeholder="Author name"></div>
+        <div class="form-group"><label>Role</label><input type="text" id="authorRole" value="Reporter"></div>
+        <div class="form-group"><label>Bio</label><textarea id="authorBio" rows="2" placeholder="Short bio"></textarea></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('authorModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveAuthor()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API = window.location.origin + '/api';
+let token = localStorage.getItem('hexa_token');
+let allCategories = [];
+
+// --- Toast ---
+function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + type + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// --- API helper ---
+async function api(path, opts) {
+    var headers = Object.assign({ 'Content-Type': 'application/json' }, (opts && opts.headers) || {});
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    try {
+        var res = await fetch(API + path, Object.assign({}, opts, { headers: headers }));
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'API error');
+        return data;
+    } catch (e) {
+        showToast(e.message, 'error');
+        return null;
+    }
+}
+
+// --- Login ---
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var user = document.getElementById('loginUser').value;
+    var pass = document.getElementById('loginPass').value;
+    var errEl = document.getElementById('loginError');
+    var res = await fetch(API + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+    });
+    var data = await res.json();
+    if (res.ok && data.token) {
+        token = data.token;
+        localStorage.setItem('hexa_token', token);
+        localStorage.setItem('hexa_user', JSON.stringify(data.user));
+        showDashboard(data.user);
+    } else {
+        errEl.textContent = data.error || 'Login failed';
+        errEl.style.display = 'block';
+    }
+});
+
+// --- Init ---
+(function init() {
+    if (token) {
+        api('/auth/me').then(function(data) {
+            if (data && data.user) showDashboard(data.user);
+            else { token = null; localStorage.removeItem('hexa_token'); }
+        });
+    }
+})();
+
+function showDashboard(user) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('adminLayout').style.display = 'block';
+    document.getElementById('userName').textContent = user.name || 'Admin';
+    loadDashboard();
+}
+
+// --- Logout ---
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    token = null;
+    localStorage.removeItem('hexa_token');
+    localStorage.removeItem('hexa_user');
+    document.getElementById('loginWrap').style.display = 'flex';
+    document.getElementById('adminLayout').style.display = 'none';
+});
+
+// --- Sidebar Navigation ---
+document.querySelectorAll('.sidebar nav a').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var tab = this.dataset.tab;
+        document.querySelectorAll('.sidebar nav a').forEach(function(a) { a.classList.remove('active'); });
+        this.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.style.display = 'none'; });
+        document.getElementById('tab-' + tab).style.display = 'block';
+        document.getElementById('pageTitle').textContent = this.textContent.trim();
+        if (tab === 'dashboard') loadDashboard();
+        if (tab === 'articles') loadArticles();
+        if (tab === 'categories') loadCategories();
+        if (tab === 'authors') loadAuthors();
+        if (tab === 'settings') loadSettings();
+    });
+});
+
+// --- Dashboard ---
+async function loadDashboard() {
+    var [articles, cats, authors] = await Promise.all([
+        api('/news?limit=100'),
+        api('/categories'),
+        api('/authors')
+    ]);
+    if (articles) {
+        document.getElementById('statArticles').textContent = articles.total || articles.news.length;
+        var totalViews = articles.news.reduce(function(s, a) { return s + (a.views || 0); }, 0);
+        document.getElementById('statViews').textContent = totalViews.toLocaleString();
+        renderArticlesTable(articles.news.slice(0, 5), 'recentArticlesTable', false);
+    }
+    if (cats) document.getElementById('statCategories').textContent = cats.length;
+    if (authors) document.getElementById('statAuthors').textContent = authors.length;
+}
+
+// --- Articles ---
+async function loadArticles() {
+    var search = document.getElementById('articleSearch').value;
+    var data = await api('/news?limit=100' + (search ? '&search=' + encodeURIComponent(search) : ''));
+    if (data) renderArticlesTable(data.news, 'articlesTable', true);
+}
+
+function renderArticlesTable(articles, containerId, showActions) {
+    if (!articles || articles.length === 0) {
+        document.getElementById(containerId).innerHTML = '<p style="color:#888;text-align:center;padding:40px">No articles found</p>';
+        return;
+    }
+    var html = '<table><thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Views</th><th>Status</th>';
+    if (showActions) html += '<th>Actions</th>';
+    html += '</tr></thead><tbody>';
+    articles.forEach(function(a) {
+        html += '<tr><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="post-detail.html?slug=' + a.slug + '" target="_blank" style="color:#111;text-decoration:none;font-weight:600">' + a.title + '</a></td>';
+        html += '<td><span class="badge badge-blue">' + a.category + '</span></td>';
+        html += '<td>' + (a.author || '-') + '</td>';
+        html += '<td>' + (a.views || 0) + '</td>';
+        html += '<td>' + (a.published ? '<span class="badge badge-green">Published</span>' : '<span class="badge badge-red">Draft</span>') + '</td>';
+        if (showActions) {
+            html += '<td><button class="btn btn-sm btn-outline" onclick="editArticle(\'' + a.slug + '\')"><i class="bi bi-pencil"></i></button> ';
+            html += '<button class="btn btn-sm btn-danger" onclick="deleteArticle(\'' + a._id + '\',\'' + a.slug + '\')"><i class="bi bi-trash"></i></button></td>';
+        }
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById(containerId).innerHTML = html;
+}
+
+// --- Article CRUD ---
+async function openArticleModal(article) {
+    await loadCategorySelect();
+    if (article) {
+        document.getElementById('articleModalTitle').textContent = 'Edit Article';
+        document.getElementById('editArticleId').value = article._id;
+        document.getElementById('artTitle').value = article.title || '';
+        document.getElementById('artCategory').value = article.category || '';
+        document.getElementById('artAuthor').value = article.author || '';
+        document.getElementById('artExcerpt').value = article.excerpt || '';
+        document.getElementById('artContent').value = article.content || '';
+        document.getElementById('artImage').value = article.image || '';
+        document.getElementById('artTags').value = (article.tags || []).join(', ');
+        document.getElementById('artReadTime').value = article.readTime || '3 min read';
+        document.getElementById('artFeatured').value = article.featured ? 'true' : 'false';
+        document.getElementById('artBreaking').value = article.breaking ? 'true' : 'false';
+        // Show image preview if article has image
+        if (article.image) {
+            var imgSrc = article.image;
+            if (!imgSrc.startsWith('http')) imgSrc = '/' + imgSrc;
+            document.getElementById('uploadPreviewImg').src = imgSrc;
+            document.getElementById('uploadPreview').style.display = 'block';
+            document.getElementById('uploadPlaceholder').style.display = 'none';
+        }
+    } else {
+        document.getElementById('articleModalTitle').textContent = 'New Article';
+        document.getElementById('editArticleId').value = '';
+        document.getElementById('artTitle').value = '';
+        document.getElementById('artExcerpt').value = '';
+        document.getElementById('artContent').value = '';
+        document.getElementById('artImage').value = '';
+        document.getElementById('artTags').value = '';
+    }
+    document.getElementById('articleModal').classList.add('show');
+}
+
+async function editArticle(slug) {
+    var a = await api('/news/' + slug);
+    if (a) openArticleModal(a);
+}
+
+async function saveArticle() {
+    var id = document.getElementById('editArticleId').value;
+    var body = {
+        title: document.getElementById('artTitle').value,
+        category: document.getElementById('artCategory').value,
+        author: document.getElementById('artAuthor').value,
+        excerpt: document.getElementById('artExcerpt').value,
+        content: document.getElementById('artContent').value,
+        image: document.getElementById('artImage').value,
+        tags: document.getElementById('artTags').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean),
+        readTime: document.getElementById('artReadTime').value,
+        featured: document.getElementById('artFeatured').value === 'true',
+        breaking: document.getElementById('artBreaking').value === 'true',
+        published: true
+    };
+    if (!body.title || !body.category || !body.content) {
+        showToast('Title, category, and content are required', 'error');
+        return;
+    }
+    var res = id ? await api('/news/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await api('/news', { method: 'POST', body: JSON.stringify(body) });
+    if (res) {
+        showToast('Article saved!', 'success');
+        closeModal('articleModal');
+        loadArticles();
+    }
+}
+
+async function deleteArticle(id, slug) {
+    if (!confirm('Delete this article?')) return;
+    var res = await api('/news/' + (id || slug), { method: 'DELETE' });
+    if (res) { showToast('Article deleted', 'success'); loadArticles(); }
+}
+
+// --- Categories ---
+async function loadCategories() {
+    var cats = await api('/categories');
+    if (!cats) return;
+    allCategories = cats;
+    var html = '<table><thead><tr><th>ID</th><th>Label</th><th>Slug</th><th>Articles</th><th>Actions</th></tr></thead><tbody>';
+    cats.forEach(function(c) {
+        html += '<tr><td>' + c.id + '</td><td>' + c.label + '</td><td>' + c.slug + '</td><td>' + (c.count || 0) + '</td>';
+        html += '<td><button class="btn btn-sm btn-danger" onclick="deleteCategory(\'' + c.id + '\')"><i class="bi bi-trash"></i></button></td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('categoriesTable').innerHTML = html;
+}
+
+function openCategoryModal() {
+    document.getElementById('catModalTitle').textContent = 'New Category';
+    document.getElementById('editCatId').value = '';
+    document.getElementById('catId').value = '';
+    document.getElementById('catLabel').value = '';
+    document.getElementById('catSlug').value = '';
+    document.getElementById('categoryModal').classList.add('show');
+}
+
+async function saveCategory() {
+    var body = {
+        id: document.getElementById('catId').value,
+        label: document.getElementById('catLabel').value,
+        slug: document.getElementById('catSlug').value || document.getElementById('catId').value
+    };
+    if (!body.id || !body.label) { showToast('ID and Label are required', 'error'); return; }
+    var res = await api('/categories', { method: 'POST', body: JSON.stringify(body) });
+    if (res) { showToast('Category saved!', 'success'); closeModal('categoryModal'); loadCategories(); }
+}
+
+async function deleteCategory(id) {
+    if (!confirm('Delete category ' + id + '?')) return;
+    var res = await api('/categories/' + id, { method: 'DELETE' });
+    if (res) { showToast('Category deleted', 'success'); loadCategories(); }
+}
+
+// --- Authors ---
+async function loadAuthors() {
+    var authors = await api('/authors');
+    if (!authors) return;
+    if (authors.length === 0) {
+        document.getElementById('authorsTable').innerHTML = '<p style="color:#888;text-align:center;padding:40px">No authors yet</p>';
+        return;
+    }
+    var html = '<table><thead><tr><th>Name</th><th>Role</th><th>Articles</th></tr></thead><tbody>';
+    authors.forEach(function(a) {
+        html += '<tr><td>' + a.name + '</td><td>' + (a.role || '-') + '</td><td>' + (a.count || 0) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('authorsTable').innerHTML = html;
+}
+
+function openAuthorModal() {
+    document.getElementById('authorName').value = '';
+    document.getElementById('authorRole').value = 'Reporter';
+    document.getElementById('authorBio').value = '';
+    document.getElementById('authorModal').classList.add('show');
+}
+
+async function saveAuthor() {
+    var body = {
+        name: document.getElementById('authorName').value,
+        role: document.getElementById('authorRole').value,
+        bio: document.getElementById('authorBio').value
+    };
+    if (!body.name) { showToast('Name is required', 'error'); return; }
+    var res = await api('/authors', { method: 'POST', body: JSON.stringify(body) });
+    if (res) { showToast('Author saved!', 'success'); closeModal('authorModal'); loadAuthors(); }
+}
+
+// --- Settings ---
+async function loadSettings() {
+    var settings = await api('/settings/all');
+    if (!settings) return;
+    var html = '<form id="settingsFormEl" onsubmit="saveSettings(event)">';
+    settings.forEach(function(s) {
+        html += '<div class="form-group"><label>' + (s.label || s.key) + '</label>';
+        if (s.type === 'textarea') html += '<textarea id="set_' + s.key + '">' + s.value + '</textarea>';
+        else if (s.type === 'color') html += '<div style="display:flex;gap:8px;align-items:center"><input type="color" id="set_' + s.key + '" value="' + s.value + '" style="width:50px;height:40px;padding:2px"><input type="text" value="' + s.value + '" style="flex:1" readonly></div>';
+        else if (s.type === 'number') html += '<input type="number" id="set_' + s.key + '" value="' + s.value + '">';
+        else html += '<input type="text" id="set_' + s.key + '" value="' + (s.value || '') + '">';
+        html += '</div>';
+    });
+    html += '<button type="submit" class="btn btn-primary">Save Settings</button></form>';
+    document.getElementById('settingsForm').innerHTML = html;
+}
+
+async function saveSettings(e) {
+    e.preventDefault();
+    var keys = document.getElementById('settingsFormEl').querySelectorAll('[id^="set_"]');
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i].id.replace('set_', '');
+        await api('/settings/' + key, { method: 'PUT', body: JSON.stringify({ value: keys[i].value }) });
+    }
+    showToast('Settings saved!', 'success');
+}
+
+// --- Helpers ---
+async function loadCategorySelect() {
+    var cats = await api('/categories');
+    if (!cats) return;
+    allCategories = cats;
+    var sel = document.getElementById('artCategory');
+    sel.innerHTML = '<option value="">Select category</option>';
+    cats.forEach(function(c) { sel.innerHTML += '<option value="' + c.id + '">' + c.label + '</option>'; });
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+    m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('show'); });
+});
+
+// --- Image Upload ---
+async function handleImageUpload(input) {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('File too large (max 5MB)', 'error'); input.value = ''; return; }
+    if (!file.type.startsWith('image/')) { showToast('Only image files allowed', 'error'); input.value = ''; return; }
+
+    var placeholder = document.getElementById('uploadPlaceholder');
+    var preview = document.getElementById('uploadPreview');
+    var previewImg = document.getElementById('uploadPreviewImg');
+
+    placeholder.innerHTML = '<i class="bi bi-arrow-repeat" style="animation:spin 1s linear inline-block"></i><p>Uploading...</p>';
+    placeholder.style.display = 'block';
+    preview.style.display = 'none';
+
+    var formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        var res = await fetch(API + '/upload/image', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+        });
+        var data = await res.json();
+        if (res.ok && data.url) {
+            document.getElementById('artImage').value = data.url;
+            previewImg.src = data.url;
+            placeholder.style.display = 'none';
+            preview.style.display = 'block';
+            showToast('Image uploaded!', 'success');
+        } else {
+            throw new Error(data.error || 'Upload failed');
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+        placeholder.innerHTML = '<i class="bi bi-cloud-arrow-up"></i><p>Click or drag image</p><span>JPG, PNG, WEBP (max 5MB)</span>';
+        input.value = '';
+    }
+}
+
+function removeUploadedImage() {
+    document.getElementById('artImage').value = '';
+    document.getElementById('uploadPreview').style.display = 'none';
+    var placeholder = document.getElementById('uploadPlaceholder');
+    placeholder.style.display = 'block';
+    placeholder.innerHTML = '<i class="bi bi-cloud-arrow-up"></i><p>Click or drag image</p><span>JPG, PNG, WEBP (max 5MB)</span>';
+    document.getElementById('artImageFile').value = '';
+}
+
+// Drag & drop visual feedback
+var uploadArea = document.getElementById('imageUploadArea');
+if (uploadArea) {
+    uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); this.style.borderColor = '#c91f26'; this.style.background = 'rgba(201,31,38,.05)'; });
+    uploadArea.addEventListener('dragleave', function() { this.style.borderColor = '#ddd'; this.style.background = ''; });
+    uploadArea.addEventListener('drop', function() { this.style.borderColor = '#ddd'; this.style.background = ''; });
+}
+
+// Reset upload preview when opening modal for new article
+var origOpenArticleModal = window.openArticleModal;
+window.openArticleModal = async function(article) {
+    removeUploadedImage();
+    await origOpenArticleModal(article);
+};
+</script>
+<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+</body>
+</html>

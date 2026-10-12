@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - HEXA NEWS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="icon" type="image/png" href="images/logo hexa.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* About Hero */
+        .about-hero {
+            padding: 80px 0 60px;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .about-hero .breadcrumb {
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .about-hero .breadcrumb-item a {
+            color: var(--primary, #ff4c60);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .about-hero .breadcrumb-item a:hover {
+            color: #1a1a2e;
+        }
+        .about-hero .breadcrumb-item.active {
+            color: rgba(255,255,255,0.6);
+        }
+        .about-hero .breadcrumb-item + .breadcrumb-item::before {
+            color: rgba(255,255,255,0.4);
+        }
+        .about-title {
+            font-family: 'Prompt', sans-serif;
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 800;
+            font-style: italic;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255,255,255,0.8);
+            text-stroke: 2px rgba(255,255,255,0.8);
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+        .about-title span {
+            -webkit-text-stroke: 2px var(--primary, #ff4c60);
+            text-stroke: 2px var(--primary, #ff4c60);
+        }
+        .about-hero-sub {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Who We Are / Our Mission */
+        .about-content-section {
+            padding: 100px 0;
+        }
+        .about-content-section .about-img {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        .about-content-section .about-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s;
+        }
+        .about-content-section .about-img:hover img {
+            transform: scale(1.05);
+        }
+        .about-content-section .about-text .section-subtitle {
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary, #ff4c60);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .about-content-section .about-text h2 {
+            font-family: 'Prompt', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1a1a2e;
+        }
+        .about-content-section .about-text p {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+        .about-content-section .about-text .check-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .about-content-section .about-text .check-list li {
+            padding: 6px 0;
+            color: #444;
+            font-size: 1rem;
+        }
+        .about-content-section .about-text .check-list li i {
+            color: var(--primary, #ff4c60);
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        /* Counter / Stats */
+        .stats-section {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(255,76,96,0.08);
+        }
+        .stats-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(255,76,96,0.06);
+        }
+        .stat-item {
+            text-align: center;
+            padding: 30px 15px;
+            position: relative;
+            z-index: 1;
+        }
+        .stat-item .stat-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,76,96,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            color: var(--primary, #ff4c60);
+            transition: all 0.3s;
+        }
+        .stat-item:hover .stat-icon {
+            background: var(--primary, #ff4c60);
+            color: #1a1a2e;
+            transform: translateY(-5px);
+        }
+        .stat-item .stat-number {
+            font-family: 'Prompt', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .stat-item .stat-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Team Section */
+        .team-section {
+            padding: 100px 0;
+        }
+        .team-section .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .team-section .section-subtitle {
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary, #ff4c60);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .team-section .section-title {
+            font-family: 'Prompt', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .team-card {
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.06);
+            transition: all 0.4s;
+            margin-bottom: 30px;
+        }
+        .team-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+        .team-card .team-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            border: 4px solid rgba(255,76,96,0.15);
+            transition: border-color 0.3s;
+        }
+        .team-card:hover .team-img {
+            border-color: var(--primary, #ff4c60);
+        }
+        .team-card .team-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .team-card h4 {
+            font-family: 'Prompt', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .team-card .team-role {
+            font-size: 0.9rem;
+            color: var(--primary, #ff4c60);
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .team-card .team-social {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .team-card .team-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        .team-card .team-social a:hover {
+            background: var(--primary, #ff4c60);
+            border-color: var(--primary, #ff4c60);
+            color: #1a1a2e;
+        }
+
+        /* Newsletter */
+        .newsletter-section {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Preloader -->
+    <div class="egns-preloader" id="preloader">
+        <div class="sequence">
+            <div class="seq-preloader">
+                <svg width="39" height="16" viewBox="0 0 39 16" xmlns="http://www.w3.org/2000/svg" class="seq-preload-indicator">
+                    <g fill="#ff4c60">
+                        <path class="seq-preload-circle seq-preload-circle-1" d="M3.999 12.012c2.209 0 3.999-1.791 3.999-3.999s-1.79-3.999-3.999-3.999-3.999 1.791-3.999 3.999 1.79 3.999 3.999 3.999z"></path>
+                        <path class="seq-preload-circle seq-preload-circle-2" d="M15.996 13.468c3.018 0 5.465-2.447 5.465-5.466 0-3.018-2.447-5.465-5.465-5.465-3.019 0-5.466 2.447-5.466 5.465 0 3.019 2.447 5.466 5.466 5.466z"></path>
+                        <path class="seq-preload-circle seq-preload-circle-3" d="M31.322 15.334c4.049 0 7.332-3.282 7.332-7.332 0-4.049-3.282-7.332-7.332-7.332s-7.332 3.283-7.332 7.332c0 4.05 3.283 7.332 7.332 7.332z"></path>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topbar -->
+    <div class="topbar-1 d-lg-flex d-none">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-3"><div class="date"><i class="bi bi-calendar3"></i> <span id="liveDate"></span> &nbsp; <i class="bi bi-thermometer-half"></i> <span id="liveTemp">--°C</span></div>
+                </div>
+                <div class="col-lg-6 text-center header-logo">
+                    <a href="index.html"><img src="images/logo hexa.png" alt="HEXA NEWS" class="site-logo"></a>
+                </div>
+                <div class="col-lg-3">
+                    <ul class="social-1">
+                        <li><a href="#"><i class="bi bi-facebook"></i> 6.5K</a></li>
+                        <li><a href="#"><i class="bi bi-twitter-x"></i> 3.5K</a></li>
+                        <li><a href="#"><i class="bi bi-pinterest"></i> 2.1K</a></li>
+                        <li><a href="#"><i class="bi bi-instagram"></i> 1.9K</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header-area style-1" id="header">
+        <div class="container">
+            <div class="header-wrap d-flex align-items-center justify-content-between">
+                <!-- Sidebar Button (Desktop) -->
+                <div class="sidebar-button mobile-menu-btn d-flex" id="menuBtn">
+                    <span></span><span></span><span></span>
+                </div>
+                <!-- Mobile Menu Button -->
+
+<!-- Main Nav -->
+                <nav class="main-nav" id="mainNav">
+                    <div class="mobile-logo-area d-lg-none d-flex">
+                        <button class="menu-close-btn" id="closeMenu"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <ul class="menu-list">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li class="menu-item-has-children">
+                            <a href="#">International News</a>
+                            <ul class="sub-menu">
+                                <li><a href="asia.html">Asia</a></li>
+                                <li><a href="north-america.html">North America</a></li>
+                                <li><a href="antarctica.html">Antarctica</a></li>
+                                <li><a href="europe.html">Europe</a></li>
+                                <li><a href="australia.html">Australia</a></li>
+                                <li><a href="south-america.html">South America</a></li>
+                                <li><a href="africa.html">Africa</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="sports.html">Sports</a></li>
+                        <li><a href="health.html">Health</a></li>
+                        <li><a href="technology.html">Technology</a></li>
+                        <li><a href="business.html">Business</a></li>
+
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </nav>
+                <!-- Header Icons -->
+                <div class="header-icons d-flex flex-row">
+                    <button class="search-btn" id="searchToggle"><i class="bi bi-search"></i></button>
+                    <div class="admin-area">
+                        <button><i class="bi bi-person"></i></button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Sidebar -->
+    <div class="search-overlay-sidebar" id="searchOverlaySidebar"></div>
+    <div class="search-sidebar" id="searchSidebar">
+        <div class="search-sidebar-header">
+            <div class="search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Search articles..." id="searchInput" autocomplete="off">
+            </div>
+            <div class="search-sidebar-close" id="closeSearchSidebar"><i class="bi bi-x-lg"></i></div>
+        </div>
+        <div class="search-sidebar-content">
+            <div class="search-suggestions" id="searchSuggestions">
+                <div class="search-suggestion-title">Trending Now</div>
+                <ul class="search-suggestion-list">
+                    <li><i class="bi bi-fire"></i> <span>AI Revolution 2026</span> <span class="trending-num">25.3K</span></li>
+                    <li><i class="bi bi-fire"></i> <span>Space Exploration News</span> <span class="trending-num">18.7K</span></li>
+                    <li><i class="bi bi-fire"></i> <span>Digital Marketing Tips</span> <span class="trending-num">12.1K</span></li>
+                    <li><i class="bi bi-fire"></i> <span>Health and Wellness</span> <span class="trending-num">9.8K</span></li>
+                    <li><i class="bi bi-fire"></i> <span>Travel Destinations</span> <span class="trending-num">8.5K</span></li>
+                </ul>
+                <div class="search-suggestion-title">Popular Topics</div>
+                <div class="search-tags-sidebar">
+                    <ul>
+                        <li><a href="#">Technology</a></li>
+                        <li><a href="#">Business</a></li>
+                        <li><a href="#">Lifestyle</a></li>
+                        <li><a href="#">Travel</a></li>
+                        <li><a href="#">Health</a></li>
+                        <li><a href="#">Fashion</a></li>
+                        <li><a href="#">Sports</a></li>
+                        <li><a href="#">Education</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="search-results-list" id="searchResults">
+                <div class="search-suggestion-title">Search Results</div>
+                <div class="search-result-item">
+                    <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=150&q=80" alt="result">
+                    <div class="result-content">
+                        <h6>Our Begin Now To Being What You Will Be</h6>
+                        <span>Lifestyle - 5 min read</span>
+                    </div>
+                </div>
+                <div class="search-result-item">
+                    <img src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=150&q=80" alt="result">
+                    <div class="result-content">
+                        <h6>Unleash Your Creativity: Explore Art</h6>
+                        <span>Art - 4 min read</span>
+                    </div>
+                </div>
+                <div class="search-result-item">
+                    <img src="https://images.unsplash.com/photo-1535139262971-c51845709a48?w=150&q=80" alt="result">
+                    <div class="result-content">
+                        <h6>Sports Excellence: Champions of Today</h6>
+                        <span>Sports - 6 min read</span>
+                    </div>
+                </div>
+                <div class="search-result-item">
+                    <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&q=80" alt="result">
+                    <div class="result-content">
+                        <h6>Technology Trends Shaping Our Future</h6>
+                        <span>Technology - 7 min read</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Hero -->
+    <section class="about-hero">
+        <div class="container">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html"><i class="bi bi-house"></i> Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">About Us</li>
+                </ol>
+            </nav>
+            <h1 class="about-title"><span>About</span> HEXA NEWS</h1>
+            <p class="about-hero-sub">Delivering authentic, timely, and insightful journalism that empowers readers around the globe.</p>
+        </div>
+    </section>
+
+    <!-- Who We Are -->
+    <section class="about-content-section">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 fade-up">
+                    <div class="about-img">
+                        <img src="https://images.unsplash.com/photo-1504711434969-e33886168d9c?w=700&q=80" alt="Who We Are">
+                    </div>
+                </div>
+                <div class="col-lg-6 fade-up" style="animation-delay: 0.2s;">
+                    <div class="about-text">
+                        <span class="section-subtitle">Who We Are</span>
+                        <h2>A Platform Built for the Modern Reader</h2>
+                        <p>HEXA NEWS is a forward-thinking digital news platform dedicated to delivering accurate, in-depth reporting on the stories that shape our world. Founded in 2020, we have grown from a small blog into a trusted voice in online journalism.</p>
+                        <p>Our editorial team combines decades of experience across technology, business, science, and culture. We believe quality journalism should be accessible, engaging, and impactful.</p>
+                        <ul class="check-list">
+                            <li><i class="bi bi-check-circle-fill"></i> Fact-checked and verified reporting</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Expert contributors from diverse fields</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Global coverage with local insights</li>
+                            <li><i class="bi bi-check-circle-fill"></i> No paywalls, always free to read</li>
+                        </ul>
+                        <a href="contact.html" class="eg-btn btn--primary btn--lg">Get in Touch <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Mission -->
+    <section class="about-content-section" style="background: #f8f9fa;">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 fade-up order-lg-2">
+                    <div class="about-img">
+                        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=700&q=80" alt="Our Mission">
+                    </div>
+                </div>
+                <div class="col-lg-6 fade-up order-lg-1" style="animation-delay: 0.2s;">
+                    <div class="about-text">
+                        <span class="section-subtitle">Our Mission</span>
+                        <h2>Empowering Minds Through Information</h2>
+                        <p>Our mission is simple yet powerful: to inform, educate, and inspire. We are committed to uncovering the truth behind every story and presenting it in a way that is both accessible and thought-provoking.</p>
+                        <p>In an era of misinformation, HEXA NEWS stands as a beacon of integrity. We invest in investigative journalism, embrace transparency in our processes, and prioritize our readers' trust above all else.</p>
+                        <ul class="check-list">
+                            <li><i class="bi bi-check-circle-fill"></i> Independent and unbiased journalism</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Commitment to journalistic ethics</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Amplifying underrepresented voices</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Innovating the future of news delivery</li>
+                        </ul>
+                        <a href="#" class="eg-btn btn--primary btn--lg">Our Values <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats / Counter Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 fade-up">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+                        <div class="stat-number" data-count="5000">0</div>
+                        <div class="stat-label">Articles</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.1s;">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="bi bi-pencil-square"></i></div>
+                        <div class="stat-number" data-count="120">0</div>
+                        <div class="stat-label">Authors</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.2s;">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="bi bi-people"></i></div>
+                        <div class="stat-number" data-count="250000">0</div>
+                        <div class="stat-label">Readers</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.3s;">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="bi bi-trophy"></i></div>
+                        <div class="stat-number" data-count="35">0</div>
+                        <div class="stat-label">Awards</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-subtitle">Our Team</span>
+                <h2 class="section-title">Meet the People Behind HEXA NEWS</h2>
+            </div>
+            <div class="row">
+                <div class="col-lg-3 col-md-6 fade-up">
+                    <div class="team-card">
+                        <div class="team-img">
+                            <img src="https://i.pravatar.cc/200?img=11" alt="Alex Morgan">
+                        </div>
+                        <h4>Alex Morgan</h4>
+                        <span class="team-role">Editor-in-Chief</span>
+                        <div class="team-social">
+                            <a href="#"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#"><i class="bi bi-linkedin"></i></a>
+                            <a href="#"><i class="bi bi-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.1s;">
+                    <div class="team-card">
+                        <div class="team-img">
+                            <img src="https://i.pravatar.cc/200?img=5" alt="Sarah Chen">
+                        </div>
+                        <h4>Sarah Chen</h4>
+                        <span class="team-role">Managing Editor</span>
+                        <div class="team-social">
+                            <a href="#"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#"><i class="bi bi-linkedin"></i></a>
+                            <a href="#"><i class="bi bi-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.2s;">
+                    <div class="team-card">
+                        <div class="team-img">
+                            <img src="https://i.pravatar.cc/200?img=12" alt="David Park">
+                        </div>
+                        <h4>David Park</h4>
+                        <span class="team-role">Head of Technology</span>
+                        <div class="team-social">
+                            <a href="#"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#"><i class="bi bi-linkedin"></i></a>
+                            <a href="#"><i class="bi bi-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 fade-up" style="animation-delay: 0.3s;">
+                    <div class="team-card">
+                        <div class="team-img">
+                            <img src="https://i.pravatar.cc/200?img=9" alt="Emily Ross">
+                        </div>
+                        <h4>Emily Ross</h4>
+                        <span class="team-role">Creative Director</span>
+                        <div class="team-social">
+                            <a href="#"><i class="bi bi-twitter-x"></i></a>
+                            <a href="#"><i class="bi bi-linkedin"></i></a>
+                            <a href="#"><i class="bi bi-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic Section -->
+    <section class="category-section pt-100">
+        <div class="container">
+            <div class="section-title-1 mb-50 text-center">
+                <h2>Entire Topic <span class="subtitle">Category</span></h2>
+            </div>
+            <div class="swiper category-1-slider">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <div class="fade-up category-1">
+                            <a href="blog-classic.html" class="image"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" alt="category"></a>
+                            <div class="content">
+                                <h4><a href="blog-classic.html">Business</a></h4>
+                                <ul>
+                                    <li>800 Article</li>
+                                    <li>3.9k View</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="category-1">
+                            <a href="blog-classic.html" class="image"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80" alt="category"></a>
+                            <div class="content">
+                                <h4><a href="blog-classic.html">Life Style</a></h4>
+                                <ul>
+                                    <li>700 Article</li>
+                                    <li>1.6k View</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="category-1">
+                            <a href="blog-classic.html" class="image"><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80" alt="category"></a>
+                            <div class="content">
+                                <h4><a href="blog-classic.html">Fashion</a></h4>
+                                <ul>
+                                    <li>680 Article</li>
+                                    <li>2.8k View</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="category-1">
+                            <a href="blog-classic.html" class="image"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" alt="category"></a>
+                            <div class="content">
+                                <h4><a href="blog-classic.html">Travel</a></h4>
+                                <ul>
+                                    <li>900 Article</li>
+                                    <li>1.3k View</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="category-1">
+                            <a href="blog-classic.html" class="image"><img src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&q=80" alt="category"></a>
+                            <div class="content">
+                                <h4><a href="blog-classic.html">Pets Care</a></h4>
+                                <ul>
+                                    <li>800 Article</li>
+                                    <li>5.5k View</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="category1-prev swiper-prev-arrow"><i class="bi bi-arrow-left"></i></div>
+                <div class="category1-next swiper-next-arrow"><i class="bi bi-arrow-right"></i></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="fade-up newsletter-content">
+                <div class="newsletter-left">
+                    <span class="newsletter-icon"><i class="bi bi-envelope-paper"></i></span>
+                    <div>
+                        <h3>Subscribe to Our Newsletter</h3>
+                        <p>Get the latest articles and news delivered straight to your inbox.</p>
+                    </div>
+                </div>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Enter your email address">
+                    <button type="submit" class="eg-btn btn--primary">Subscribe <i class="bi bi-send"></i></button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="footer style-1">
+        <div class="container">
+            <div class="fade-up footer-widget-area pt-90 pb-90">
+                <div class="row gy-5">
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-info">
+                            <div class="footer-logo mb-20">
+                                <a href="index.html"><img src="images/logo hexa.png" alt="HEXA NEWS" class="site-logo footer-logo"></a>
+                            </div>
+                            <h3 style="font-size:18px;color:#fff;margin-bottom:15px;">Stay informed. Stay ahead.</h3>
+                            <div class="footer-form">
+                                <p style="font-size:14px;margin-bottom:10px;">Get our best stories delivered to your inbox.</p>
+                                <form class="form-inner">
+                                    <input type="email" placeholder="Enter Your Email...">
+                                    <button type="submit">Subscribe</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 col-lg-5 col-md-6">
+                        <h4 class="footer-title">Top Article This Week</h4>
+                        <div class="blog-list-1">
+                            <a href="post-detail.html" class="image"><img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=120&q=80" alt="thumb"></a>
+                            <div class="content">
+                                <h6><a href="post-detail.html">Our Begin Now To Being What You Will Be.</a></h6>
+                                <ul>
+                                    <li><i class="bi bi-calendar3"></i> Jul 02, 2026</li>
+                                    <li><i class="bi bi-chat"></i> 520 Comment</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="blog-list-1">
+                            <a href="post-detail.html" class="image"><img src="https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=120&q=80" alt="thumb"></a>
+                            <div class="content">
+                                <h6><a href="post-detail.html">Our Begin Now To Being What You Will Be.</a></h6>
+                                <ul>
+                                    <li><i class="bi bi-calendar3"></i> Jul 11, 2026</li>
+                                    <li><i class="bi bi-chat"></i> 454 Comment</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-2 col-md-6">
+                        <h4 class="footer-title">Quick Link</h4>
+                        <ul class="footer-list">
+                            <li><a href="about.html">About</a></li>
+                            <li><a href="#">International News</a></li>
+                            <li><a href="#">Post</a></li>
+                            <li><a href="#">Feature</a></li>
+                            <li><a href="contact.html">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <h4 class="footer-title">Social Media</h4>
+                        <ul class="social-2">
+                            <li><a href="#"><i class="bi bi-facebook"></i> Facebook</a></li>
+                            <li><a href="#"><i class="bi bi-twitter-x"></i> Twitter</a></li>
+                            <li><a href="#"><i class="bi bi-pinterest"></i> Pinterest</a></li>
+                            <li><a href="#"><i class="bi bi-instagram"></i> Instagram</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="help-center d-flex justify-content-md-between justify-content-center align-items-center">
+                <h5><a href="contact.html">Help Center</a></h5>
+                <ul class="help-list">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms & Conditions</a></li>
+                    <li><a href="#">Services</a></li>
+                    <li><a href="contact.html">Help</a></li>
+                </ul>
+            </div>
+            <div class="copyright-area text-center pt-30 pb-30">
+                <p>&copy; 2026 HEXA NEWS is Proudly Powered by <a href="#" style="color:var(--primary-one);">Hexa Branding</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top -->
+    <button class="back-to-top" id="backToTop">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+        new Swiper('.category-1-slider', {
+            slidesPerView: 4,
+            spaceBetween: 20,
+            loop: true,
+            autoplay: { delay: 3000, disableOnInteraction: false },
+            navigation: { prevEl: '.category1-prev', nextEl: '.category1-next' },
+            breakpoints: { 0: { slidesPerView: 1 }, 576: { slidesPerView: 2 }, 992: { slidesPerView: 4 } }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const counters = document.querySelectorAll('.stat-number');
+            const speed = 80;
+
+            const animateCounters = () => {
+                counters.forEach(counter => {
+                    const target = +counter.getAttribute('data-count');
+                    const increment = Math.ceil(target / speed);
+                    let current = 0;
+
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            counter.textContent = current.toLocaleString();
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            counter.textContent = target.toLocaleString();
+                        }
+                    };
+                    updateCounter();
+                });
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateCounters();
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            if (counters.length > 0) {
+                observer.observe(counters[0].closest('.stats-section'));
+            }
+        });
+    </script>
+</body>
+</html>

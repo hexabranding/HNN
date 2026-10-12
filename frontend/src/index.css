@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700;800&display=swap');
+@import 'swiper/css';
+@import 'swiper/css/navigation';
+@import 'swiper/css/pagination';
+@import 'swiper/css/effect-fade';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #ff4c60;
+    --primary-red: #c91f26;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Prompt', sans-serif;
+  }
+}
+
+/* Custom Swiper pagination dots for hero */
+.hero-pagination .swiper-pagination-bullet {
+  background: #ffffff;
+  opacity: 0.6;
+  width: 10px;
+  height: 10px;
+  margin: 0 4px;
+  transition: all 0.3s;
+}
+.hero-pagination .swiper-pagination-bullet-active {
+  background: #ff4c60;
+  opacity: 1;
+  width: 28px;
+  border-radius: 6px;
+}

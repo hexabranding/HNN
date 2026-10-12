@@ -9,6 +9,7 @@ import BlogStandardPage from './pages/BlogStandardPage';
 import BlogClassicPage from './pages/BlogClassicPage';
 import BlogMasonryPage from './pages/BlogMasonryPage';
 import CategoryPage from './pages/CategoryPage';
+import BusinessPage from './pages/BusinessPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -40,7 +41,7 @@ function App() {
         <Route path="/sports" element={<CategoryPage category="sports" />} />
         <Route path="/health" element={<CategoryPage category="health" />} />
         <Route path="/technology" element={<CategoryPage category="technology" />} />
-        <Route path="/business" element={<CategoryPage category="business" />} />
+        <Route path="/business" element={<BusinessPage />} />
 
         {/* 7. Regional International Categories */}
         <Route path="/asia" element={<CategoryPage category="asia" isRegional={true} />} />

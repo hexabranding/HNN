@@ -6,6 +6,7 @@ import SearchModal from '../components/SearchModal';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
 import CategorySidebar from '../components/CategorySidebar';
+import BusinessPage from './BusinessPage';
 import { CATEGORY_PAGES_DATA } from '../data/categoryData';
 import { fetchApi } from '../services/api';
 
@@ -64,6 +65,10 @@ const ENTIRE_TOPIC_CATEGORIES = [
 export default function CategoryPage({ category: propCategory, isRegional: propIsRegional }) {
   const params = useParams();
   const categoryKey = (propCategory || params.category || 'sports').toLowerCase();
+
+  if (categoryKey === 'business') {
+    return <BusinessPage />;
+  }
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

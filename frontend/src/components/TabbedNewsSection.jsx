@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/navigation';
 import { STATIC_TABS_DATA } from '../data/staticHomeData';
 import { formatImageUrl } from '../services/api';
 
@@ -18,7 +16,7 @@ export default function TabbedNewsSection({ allArticles = [] }) {
   ];
 
   const getFilteredArticles = () => {
-    if (allArticles && allArticles.length >= 3) {
+    if (allArticles && allArticles.length >= 6) {
       const copy = [...allArticles];
       switch (activeTab) {
         case 'newest':
@@ -42,124 +40,114 @@ export default function TabbedNewsSection({ allArticles = [] }) {
   const displayedArticles = getFilteredArticles();
 
   return (
-    <section className="py-12 bg-white">
-      {/* Section Header & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-200 pb-4 mb-8 gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#c91f26]">
-            Curated Feed
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-prompt">
-            Featured Headlines
-          </h2>
-        </div>
+    <section className="w-full pt-[50px] px-[5%] pb-0 bg-white">
+      <div className="w-full max-w-[1440px] mx-auto">
+        {/* Tab Nav matching .nav-tabs.nav-style-1 */}
+        <ul className="flex flex-wrap justify-center items-center border-b-2 border-[#eee] mb-[40px] list-none p-0">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <li key={tab.id} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`font-['Prompt',sans-serif] text-[18px] font-semibold text-black px-[25px] py-[12px] bg-transparent border-b-[3px] -mb-[2px] transition-all duration-300 cursor-pointer block hover:border-b-[#ff4c60] ${
+                    isActive ? 'border-b-[#ff4c60]' : 'border-b-transparent'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
-        {/* Tab switcher buttons */}
-        <div className="flex flex-wrap gap-1 sm:gap-2 bg-gray-100 p-1.5 rounded-xl self-start md:self-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
-                activeTab === tab.id
-                  ? 'bg-[#c91f26] text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Articles Carousel */}
-      <div className="relative group">
-        <Swiper
-          modules={[Navigation]}
-          spaceBetween={24}
-          slidesPerView={1}
-          navigation={{
-            nextEl: `.tab-next-${activeTab}`,
-            prevEl: `.tab-prev-${activeTab}`,
-          }}
-          breakpoints={{
-            640: { slidesPerView: 2 },
-            1024: { slidesPerView: 3 },
-          }}
-          className="pb-4"
-        >
-          {displayedArticles.map((article, idx) => (
-            <SwiperSlide key={article._id || article.slug || idx}>
-              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full group/card transform hover:-translate-y-1">
-                {/* Thumbnail */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
-                  <span className="absolute top-3 left-3 z-10 px-3 py-1 bg-[#c91f26] text-white text-[10px] font-bold uppercase tracking-wider rounded-md shadow-sm">
+        {/* Tab Content Slider matching .banner-1-slider */}
+        <div className="relative">
+          <Swiper
+            spaceBetween={20}
+            slidesPerView={1}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              992: { slidesPerView: 3 },
+            }}
+            className="pb-4"
+          >
+            {displayedArticles.map((article, idx) => (
+              <SwiperSlide key={article._id || article.slug || idx} className="h-auto">
+                {/* .blog-grid-3 card */}
+                <div className="relative bg-white border border-[#eee] rounded-[12px] overflow-hidden transition-all duration-400 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] group flex flex-col h-full text-left">
+                  {/* Category Badge matching .eg-badge.badge--red */}
+                  <span className="absolute top-[15px] left-[15px] z-10 bg-[#ff4c60] text-white text-[12px] font-semibold px-[14px] py-[5px] rounded-[3px] font-['Inter',sans-serif] pointer-events-none">
                     {article.category || 'News'}
                   </span>
-                  <a href={`/post-detail.html?slug=${article.slug}`} className="block w-full h-full">
+
+                  {/* Image matching .blog-grid-3 .image */}
+                  <a
+                    href={`/post-detail.html?slug=${article.slug || ''}`}
+                    className="block w-full h-[280px] overflow-hidden bg-gray-100"
+                  >
                     <img
                       src={formatImageUrl(article.image)}
                       alt={article.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.08]"
                       loading="lazy"
                     />
                   </a>
-                </div>
 
-                {/* Card Content */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Author & Views */}
-                    <div className="flex items-center gap-2.5 text-xs text-gray-500 mb-3">
-                      {article.authorImg && (
-                        <img
-                          src={article.authorImg}
-                          alt={article.author || 'Author'}
-                          className="w-6 h-6 rounded-full object-cover ring-2 ring-gray-100"
-                        />
-                      )}
-                      <span className="font-semibold text-gray-700">
-                        {article.author || 'Rison donec'}
-                      </span>
-                      <span className="text-gray-300">•</span>
-                      <span>{article.views || '1.5k View'}</span>
+                  {/* Content matching .blog-grid-3 .content */}
+                  <div className="p-[20px] flex-1 flex flex-col justify-between">
+                    <div>
+                      {/* Author & Views */}
+                      <ul className="flex items-center gap-[15px] text-[13px] text-[#101010]/50 mb-[12px] p-0 list-none">
+                        <li>
+                          <a
+                            href="/author.html"
+                            className="flex items-center gap-[6px] text-inherit hover:text-[#ff4c60] transition-colors"
+                          >
+                            <img
+                              src={
+                                article.authorImg ||
+                                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&q=80'
+                              }
+                              alt={article.author || 'Author'}
+                              className="w-[28px] h-[28px] rounded-full object-cover"
+                            />
+                            <span className="text-[#101010]/70 font-normal">
+                              {article.author || 'Rison donec'}
+                            </span>
+                          </a>
+                        </li>
+                        <li className="text-[#101010]/50">{article.views || '1.5k View'}</li>
+                      </ul>
+
+                      {/* Heading Title matching h4 */}
+                      <h4 className="font-['Prompt',sans-serif] text-[24px] font-semibold text-[#101010] leading-[1.4] mb-[15px] line-clamp-2">
+                        <a
+                          href={`/post-detail.html?slug=${article.slug || ''}`}
+                          className="hover:text-[#ff4c60] transition-colors"
+                        >
+                          {article.title}
+                        </a>
+                      </h4>
                     </div>
 
-                    {/* Headline Title */}
-                    <h3 className="text-base font-bold font-prompt text-gray-900 group-hover/card:text-[#c91f26] transition-colors line-clamp-2 leading-snug">
-                      <a href={`/post-detail.html?slug=${article.slug}`}>{article.title}</a>
-                    </h3>
-                  </div>
-
-                  {/* Read More Link */}
-                  <div className="pt-4 mt-4 border-t border-gray-50 flex items-center justify-between">
-                    <a
-                      href={`/post-detail.html?slug=${article.slug}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#c91f26] hover:text-[#a8191f] transition"
-                    >
-                      <span>Read Story</span>
-                      <i className="bi bi-arrow-right text-[10px]"></i>
-                    </a>
+                    {/* Bottom Area matching .bottom-area & .arrow-btn */}
+                    <div className="flex items-center justify-between">
+                      <a
+                        href={`/post-detail.html?slug=${article.slug || ''}`}
+                        className="text-[#ff4c60] text-[14px] font-semibold inline-flex items-center gap-[6px] hover:tracking-[0.5px] transition-all"
+                      >
+                        <span>View Details</span>
+                        <i className="bi bi-arrow-right"></i>
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-
-        {/* Carousel Arrow Controls */}
-        <button
-          className={`tab-prev-${activeTab} absolute -left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 text-gray-700 hover:bg-[#c91f26] hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100`}
-          aria-label="Previous articles"
-        >
-          <i className="bi bi-chevron-left text-sm"></i>
-        </button>
-        <button
-          className={`tab-next-${activeTab} absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 text-gray-700 hover:bg-[#c91f26] hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100`}
-          aria-label="Next articles"
-        >
-          <i className="bi bi-chevron-right text-sm"></i>
-        </button>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
       </div>
     </section>
   );

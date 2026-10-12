@@ -72,9 +72,7 @@ export default function HomePage() {
         <HeroSlider articles={featuredArticles} />
 
         {/* Section 2: Banner 5-Tab News Carousel (Newest, Trending, Top View, Top Like, Recent) */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <TabbedNewsSection allArticles={allArticles} />
-        </div>
+        <TabbedNewsSection allArticles={allArticles} />
 
         {/* Section 3: Blog List Multi-List & Sidebar Editor Choice / Stay Connected */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

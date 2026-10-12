@@ -1,113 +1,161 @@
 import React from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 import { STATIC_MULTI_LIST } from '../data/staticHomeData';
 import { formatImageUrl } from '../services/api';
 
 export default function MultiListSection({ articles = [] }) {
-  // If API has enough articles, hydrate into the 3 groups; otherwise use exact static data
-  const groups = STATIC_MULTI_LIST.map((staticGroup, gIdx) => {
-    const startIdx = gIdx * 5;
-    const endIdx = startIdx + 5;
-    const apiSlice = articles && articles.length >= endIdx ? articles.slice(startIdx, endIdx) : [];
-
-    if (apiSlice.length > 0) {
-      return {
-        groupTitle: staticGroup.groupTitle,
-        groupSubtitle: staticGroup.groupSubtitle,
-        items: apiSlice.map((item) => {
-          const d = item.date ? new Date(item.date) : new Date();
-          const day = isNaN(d.getTime()) ? '12' : d.getDate().toString().padStart(2, '0');
-          const mon = isNaN(d.getTime()) ? 'JUL' : d.toLocaleString('en', { month: 'short' });
+  // If API has enough articles (at least 15), hydrate into the 3 groups; otherwise use exact static data
+  const groups =
+    articles && articles.length >= 15
+      ? STATIC_MULTI_LIST.map((staticGroup, gIdx) => {
+          const startIdx = gIdx * 5;
+          const endIdx = startIdx + 5;
+          const apiSlice = articles.slice(startIdx, endIdx);
           return {
-            day,
-            mon,
-            author: item.author || 'Staff Reporter',
-            category: item.category || 'News',
-            title: item.title,
-            readTime: item.readTime || '5 Min Read',
-            image: formatImageUrl(item.image),
-            slug: item.slug,
+            groupTitle: staticGroup.groupTitle,
+            groupSubtitle: staticGroup.groupSubtitle,
+            items: apiSlice.map((item) => {
+              const d = item.date ? new Date(item.date) : new Date();
+              const day = isNaN(d.getTime()) ? '12' : d.getDate().toString().padStart(2, '0');
+              const mon = isNaN(d.getTime()) ? 'Jul' : d.toLocaleString('en', { month: 'short' });
+              return {
+                day,
+                mon,
+                author: item.author || 'Staff Reporter',
+                category: item.category || 'News',
+                title: item.title,
+                readTime: item.readTime || '5 Min Read',
+                image: formatImageUrl(item.image),
+                slug: item.slug,
+              };
+            }),
           };
-        }),
-      };
-    }
-    return staticGroup;
-  });
+        })
+      : STATIC_MULTI_LIST;
 
   return (
-    <div className="space-y-12">
-      {groups.map((group, gIdx) => (
-        <div key={gIdx} className="bg-white">
-          {/* Group Header */}
-          <div className="flex items-center justify-between border-b-2 border-gray-100 pb-3 mb-6">
-            <h3 className="text-xl sm:text-2xl font-bold font-prompt text-gray-900 flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-[#c91f26]"></span>
-              {group.groupTitle}
-              <span className="text-xs font-semibold text-gray-400 font-sans uppercase tracking-wider ml-1">
-                / {group.groupSubtitle}
-              </span>
-            </h3>
-          </div>
+    <div className="relative w-full">
+      {/* Swiper Arrow Controls (top-right corner) */}
+      <div className="absolute top-0 right-0 z-20 flex items-center gap-2.5">
+        <button
+          type="button"
+          className="blog-multi-prev w-[40px] h-[40px] rounded-full border border-[#eee] bg-white flex items-center justify-center text-[#101010]/50 hover:bg-[#ff4c60] hover:border-[#ff4c60] hover:text-white transition-all cursor-pointer shadow-sm"
+          aria-label="Previous slide"
+        >
+          <i className="bi bi-arrow-left text-base leading-none"></i>
+        </button>
+        <button
+          type="button"
+          className="blog-multi-next w-[40px] h-[40px] rounded-full border border-[#eee] bg-white flex items-center justify-center text-[#101010]/50 hover:bg-[#ff4c60] hover:border-[#ff4c60] hover:text-white transition-all cursor-pointer shadow-sm"
+          aria-label="Next slide"
+        >
+          <i className="bi bi-arrow-right text-base leading-none"></i>
+        </button>
+      </div>
 
-          {/* Items List */}
-          <div className="space-y-4">
-            {group.items.map((item, idx) => (
-              <div
-                key={item.slug || idx}
-                className="flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover:border-red-100 hover:shadow-md transition-all duration-200 group bg-white"
-              >
-                {/* Date badge */}
-                <div className="flex flex-col items-center justify-center w-12 sm:w-14 h-14 sm:h-16 bg-red-50 text-[#c91f26] rounded-xl font-bold flex-shrink-0 border border-red-100">
-                  <span className="text-base sm:text-lg leading-none font-extrabold">{item.day}</span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider mt-0.5">{item.mon}</span>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mb-1.5">
-                    <span className="font-semibold text-gray-700">
-                      {item.author}
-                    </span>
-                    <span>•</span>
-                    <span className="text-[#c91f26] font-bold uppercase text-[10px] tracking-wider">
-                      {item.category}
-                    </span>
-                  </div>
-
-                  <h4 className="text-sm sm:text-base font-bold font-prompt text-gray-900 group-hover:text-[#c91f26] transition-colors line-clamp-2 leading-snug">
-                    <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
-                  </h4>
-
-                  <div className="flex items-center justify-between mt-3 text-xs">
-                    <a
-                      href={`/post-detail.html?slug=${item.slug}`}
-                      className="text-[#c91f26] font-bold inline-flex items-center gap-1.5 hover:underline text-xs tracking-wide"
-                    >
-                      <span>Read More</span>
-                      <i className="bi bi-arrow-right text-[10px]"></i>
-                    </a>
-                    <span className="text-gray-400 text-[11px] font-medium">
-                      <i className="bi bi-clock mr-1"></i> {item.readTime}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Thumbnail */}
-                <a
-                  href={`/post-detail.html?slug=${item.slug}`}
-                  className="w-20 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100"
+      {/* Swiper Slider sliding horizontally left/right */}
+      <Swiper
+        modules={[Navigation, Autoplay]}
+        slidesPerView={1}
+        loop={true}
+        speed={800}
+        autoplay={{
+          delay: 5000,
+          disableOnInteraction: false,
+        }}
+        navigation={{
+          nextEl: '.blog-multi-next',
+          prevEl: '.blog-multi-prev',
+        }}
+        className="w-full"
+      >
+        {groups.map((group, gIdx) => (
+          <SwiperSlide key={gIdx} className="w-full">
+            {/* Section Title matching .section-title-1 */}
+            <div className="mb-[40px] pr-[100px]">
+              <h2 className="font-['Prompt',sans-serif] text-[32px] sm:text-[40px] font-bold text-[#101010] leading-[1.2] flex items-baseline flex-wrap">
+                <span>{group.groupTitle}</span>
+                <span
+                  className="ml-[8px] font-['Prompt',sans-serif] text-[32px] sm:text-[40px] font-bold"
+                  style={{
+                    WebkitTextStroke: '2px #ff4c60',
+                    WebkitTextFillColor: 'transparent',
+                  }}
                 >
-                  <img
-                    src={formatImageUrl(item.image)}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                    loading="lazy"
-                  />
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+                  {group.groupSubtitle}
+                </span>
+              </h2>
+            </div>
+
+            {/* 5 Blog Items matching .blog-list-2 */}
+            <div className="w-full">
+              {group.items.map((item, idx) => (
+                <div
+                  key={item.slug || idx}
+                  className="flex gap-[20px] items-start pb-[25px] mb-[25px] border-b border-[#eee] last:border-b-0 last:mb-0 last:pb-0 group"
+                >
+                  {/* Date Column */}
+                  <div className="text-center min-w-[70px] flex-shrink-0 pt-0.5">
+                    <h3 className="font-['Prompt',sans-serif] text-[32px] font-bold text-[#ff4c60] leading-none">
+                      {item.day}
+                    </h3>
+                    <p className="text-[14px] text-[#101010]/50 mt-[4px] leading-tight">
+                      {item.mon}
+                    </p>
+                  </div>
+
+                  {/* Content Column */}
+                  <div className="flex-1 min-w-0">
+                    <ul className="flex items-center gap-[15px] text-[13px] text-[#101010]/50 mb-[8px] list-none p-0">
+                      <li className="flex items-center gap-[5px]">
+                        <i className="bi bi-person text-sm"></i>
+                        <span>{item.author}</span>
+                      </li>
+                      <li>
+                        <span className="text-[#548f6f] font-medium">{item.category}</span>
+                      </li>
+                    </ul>
+
+                    <h4 className="font-['Prompt',sans-serif] text-[20px] sm:text-[22px] font-semibold text-[#101010] leading-[1.4] mb-[10px] group-hover:text-[#ff4c60] transition-colors">
+                      <a href={`/post-detail.html?slug=${item.slug}`}>{item.title}</a>
+                    </h4>
+
+                    <div className="flex items-center gap-[20px]">
+                      <a
+                        href={`/post-detail.html?slug=${item.slug}`}
+                        className="text-[#ff4c60] text-[14px] font-semibold inline-flex items-center gap-[6px] hover:tracking-[0.5px] transition-all"
+                      >
+                        <span>View Details</span>
+                        <i className="bi bi-arrow-right"></i>
+                      </a>
+                      <span className="text-[13px] text-[#101010]/50 flex items-center gap-[5px]">
+                        <i className="bi bi-clock text-[#d99374]"></i>
+                        <span>{item.readTime}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Image Thumbnail Column */}
+                  <a
+                    href={`/post-detail.html?slug=${item.slug}`}
+                    className="flex-shrink-0 w-[110px] h-[90px] rounded-[8px] overflow-hidden block bg-gray-100"
+                  >
+                    <img
+                      src={formatImageUrl(item.image)}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </div>
   );
 }

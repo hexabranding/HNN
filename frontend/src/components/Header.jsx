@@ -47,27 +47,32 @@ export default function Header({ onOpenSearch }) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Mobile Hamburger & Mobile Logo */}
-            <div className="flex items-center space-x-3 lg:hidden">
+            {/* Left: Menu toggle button & Mobile Logo */}
+            <div className="flex items-center space-x-4">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-2 text-gray-700 hover:text-[#c91f26] rounded-md focus:outline-none"
-                aria-label="Open menu"
+                className="flex flex-col justify-center items-center w-7 h-7 gap-1 focus:outline-none group cursor-pointer"
+                aria-label="Open sidebar menu"
               >
-                <i className="bi bi-list text-2xl"></i>
+                <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
+                <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
+                <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
               </button>
-              <Link to="/" className="inline-block">
-                <img
-                  src="/images/logo%20hexa.png"
-                  alt="HEXA NEWS"
-                  className="h-9 w-auto object-contain"
-                />
-              </Link>
+
+              <div className="lg:hidden">
+                <Link to="/" className="inline-block">
+                  <img
+                    src="/images/logo%20hexa.png"
+                    alt="HEXA NEWS"
+                    className="h-8 w-auto object-contain"
+                  />
+                </Link>
+              </div>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
+            <nav className="hidden lg:flex items-center space-x-7">
               {navLinks.map((item, idx) => {
                 if (item.dropdown) {
                   return (

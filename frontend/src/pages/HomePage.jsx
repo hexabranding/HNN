@@ -69,9 +69,7 @@ export default function HomePage() {
       {/* Main Content Body in exact order of index.html */}
       <main className="flex-1 w-full">
         {/* Section 1: Hero Carousel Slider */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
-          <HeroSlider articles={featuredArticles} />
-        </section>
+        <HeroSlider articles={featuredArticles} />
 
         {/* Section 2: Banner 5-Tab News Carousel (Newest, Trending, Top View, Top Like, Recent) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

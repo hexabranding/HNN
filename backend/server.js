@@ -18,9 +18,7 @@ const authorsRoutes = require("./routes/authors");
 const settingsRoutes = require("./routes/settings");
 const adsRoutes = require("./routes/ads");
 const uploadRoutes = require("./routes/upload");
-const Ad = require("./models/Ad");
 const Image = require("./models/Image");
-const { startWarmup } = require("./utils/warmTranslations");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -32,12 +30,15 @@ app.use(cors({
     if (!origin || process.env.NODE_ENV !== "production") {
       return callback(null, true);
     }
-   const allowed = [
-  FRONTEND_URL,
-  process.env.ALLOWED_ORIGIN,
-  "http://localhost:4000",
-  "http://127.0.0.1:4000",
-].filter(Boolean);
+    const rawOrigins = [
+      FRONTEND_URL,
+      process.env.ALLOWED_ORIGIN,
+      "http://localhost:4000",
+      "http://127.0.0.1:4000",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+    ].filter(Boolean);
+    const allowed = rawOrigins.flatMap((o) => o.split(",")).map((s) => s.trim());
     callback(null, allowed.includes(origin));
   },
   credentials: true,
@@ -85,43 +86,28 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
-// --- Static site (project root) ---
+// --- Static images (project root) ---
 const ROOT = path.join(__dirname, "..");
-const BLOCKED_PREFIXES = ["/backend", "/node_modules", "/.git", "/.agents", "/testing"];
+app.use("/images", express.static(path.join(ROOT, "images")));
 
-app.use((req, res, next) => {
-  const blocked = BLOCKED_PREFIXES.some(
-    (p) => req.path === p || req.path.startsWith(p + "/")
-  );
-  if (blocked) return res.status(404).send("Not found");
-  next();
-});
+// --- Serve React production build if dist exists ---
+const FRONTEND_DIST = path.join(__dirname, "../frontend/dist");
+if (fs.existsSync(FRONTEND_DIST)) {
+  app.use(express.static(FRONTEND_DIST));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads") || req.path.startsWith("/images")) {
+      return next();
+    }
+    res.sendFile(path.join(FRONTEND_DIST, "index.html"));
+  });
+}
 
-app.use(
-  express.static(ROOT, {
-    extensions: ["html"],
-    dotfiles: "deny",
-    index: "index.html",
-  })
-);
-
-// Extensionless paths: /sports -> sports.html (if that file exists).
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) return next();
-  if (path.extname(req.path)) return next();
-  const candidate = path.join(ROOT, req.path + ".html");
-  if (candidate.startsWith(ROOT) && fs.existsSync(candidate)) {
-    return res.sendFile(candidate);
-  }
-  next();
-});
-
-// 404
+// 404 handler
 app.use((req, res) => {
   if (req.path.startsWith("/api")) {
     return res.status(404).json({ error: "API endpoint not found" });
   }
-  res.status(404).sendFile(path.join(ROOT, "404.html"));
+  res.status(404).json({ error: "Not found" });
 });
 
 app.use((err, _req, res, _next) => {
@@ -160,19 +146,8 @@ app.listen(PORT, () => {
   console.log(`   Health: /api/health\n`);
 });
 
-connectDB().then(async (connection) => {
+connectDB().then((connection) => {
   if (connection) {
     seedInitialAdmin();
-    try {
-      const indexes = await Ad.collection.listIndexes().toArray();
-      const hasSlotIndex = indexes.some((idx) => idx.key && idx.key.slot === 1);
-      if (hasSlotIndex) {
-        await Ad.collection.dropIndex("slot_1");
-        console.log("Dropped old unique index on Ad.slot");
-      }
-    } catch (err) {
-      console.log("Index cleanup skipped:", err.message);
-    }
-    startWarmup();
   }
 });

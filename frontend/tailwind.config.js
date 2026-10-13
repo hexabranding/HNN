@@ -29,6 +29,15 @@ export default {
         inter: ["Inter", "sans-serif"],
         prompt: ["Prompt", "sans-serif"],
       },
+      keyframes: {
+        'seq-preloader': {
+          '0%, 100%': { opacity: '0' },
+          '50%': { opacity: '1' },
+        },
+      },
+      animation: {
+        'seq-preloader': 'seq-preloader 1.25s infinite',
+      },
     },
   },
   plugins: [],

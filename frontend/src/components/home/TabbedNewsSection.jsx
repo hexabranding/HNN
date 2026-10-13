@@ -78,7 +78,10 @@ export default function TabbedNewsSection({ allArticles = [] }) {
                 {/* .blog-grid-3 card */}
                 <div className="relative bg-white border border-[#eee] rounded-[12px] overflow-hidden transition-all duration-400 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] group flex flex-col h-full text-left">
                   {/* Category Badge matching .eg-badge.badge--red */}
-                  <span className="absolute top-[15px] left-[15px] z-10 bg-[#ff4c60] text-white text-[12px] font-semibold px-[14px] py-[5px] rounded-[3px] font-['Inter',sans-serif] pointer-events-none">
+                  <span
+                    style={{ backgroundColor: article.backgroundColor || '#c91f26' }}
+                    className="absolute top-[15px] left-[15px] z-10 text-white text-[12px] font-semibold px-[14px] py-[5px] rounded-[3px] font-['Inter',sans-serif] pointer-events-none shadow-sm"
+                  >
                     {article.category || 'News'}
                   </span>
 

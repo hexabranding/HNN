@@ -4,6 +4,7 @@ import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import BusinessPage from './BusinessPage';
 import { CATEGORY_PAGES_DATA } from '../../data/categoryData';
 import { fetchApi } from '../../services/api';
+import Pagination from '../../components/common/Pagination';
 
 const ENTIRE_TOPIC_CATEGORIES = [
   {
@@ -112,6 +113,13 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
         }))
       : fallbackData.articles;
 
+  const CARDS_PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(displayedArticles.length / CARDS_PER_PAGE));
+  const paginatedArticles = displayedArticles.slice(
+    (currentPage - 1) * CARDS_PER_PAGE,
+    currentPage * CARDS_PER_PAGE
+  );
+
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
     if (newsletterEmail.trim()) {
@@ -153,7 +161,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
               <div className="lg:col-span-8">
                 {/* 2-Column News Cards Grid - Auto resized to content length */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  {displayedArticles.map((article, idx) => (
+                  {paginatedArticles.map((article, idx) => (
                     <article
                       key={idx}
                       className="border border-[#eeeeee] rounded-[10px] overflow-hidden bg-white hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300 group h-fit self-start"
@@ -220,80 +228,16 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                   ))}
                 </div>
 
-                {/* Interactive Pagination matching sports.html */}
-                <div className="mt-12 flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded text-blue-600 hover:bg-gray-50 text-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
-                    aria-label="Previous Page"
-                  >
-                    <i className="bi bi-arrow-left"></i>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(1)}
-                    className={`w-9 h-9 flex items-center justify-center rounded text-sm font-semibold transition ${
-                      currentPage === 1
-                        ? 'bg-[#0d6efd] text-white shadow-sm'
-                        : 'border border-gray-200 text-[#0d6efd] hover:bg-gray-50'
-                    }`}
-                  >
-                    1
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(2)}
-                    className={`w-9 h-9 flex items-center justify-center rounded text-sm font-semibold transition ${
-                      currentPage === 2
-                        ? 'bg-[#0d6efd] text-white shadow-sm'
-                        : 'border border-gray-200 text-[#0d6efd] hover:bg-gray-50'
-                    }`}
-                  >
-                    2
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(3)}
-                    className={`w-9 h-9 flex items-center justify-center rounded text-sm font-semibold transition ${
-                      currentPage === 3
-                        ? 'bg-[#0d6efd] text-white shadow-sm'
-                        : 'border border-gray-200 text-[#0d6efd] hover:bg-gray-50'
-                    }`}
-                  >
-                    3
-                  </button>
-
-                  <span className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded text-gray-500 text-sm select-none">
-                    ...
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(12)}
-                    className={`w-9 h-9 flex items-center justify-center rounded text-sm font-semibold transition ${
-                      currentPage === 12
-                        ? 'bg-[#0d6efd] text-white shadow-sm'
-                        : 'border border-gray-200 text-[#0d6efd] hover:bg-gray-50'
-                    }`}
-                  >
-                    12
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(12, p + 1))}
-                    disabled={currentPage === 12}
-                    className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded text-blue-600 hover:bg-gray-50 text-sm disabled:opacity-40 disabled:cursor-not-allowed transition"
-                    aria-label="Next Page"
-                  >
-                    <i className="bi bi-arrow-right"></i>
-                  </button>
-                </div>
+                {/* Interactive Pagination matching HEXA NEWS standard (10 cards per page) */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(p) => {
+                    setCurrentPage(p);
+                    window.scrollTo({ top: 380, behavior: 'smooth' });
+                  }}
+                  className="mt-12 !justify-start"
+                />
               </div>
 
               {/* Right Column: 4 cols (Sidebar) */}

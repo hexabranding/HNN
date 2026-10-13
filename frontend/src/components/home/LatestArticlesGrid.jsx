@@ -37,8 +37,11 @@ export default function LatestArticlesGrid({ articles = [] }) {
         {/* 3-Column Grid matching .row & .blog-grid-1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[30px]">
           {displayArticles.map((item, idx) => {
+            const hasCustomBg = !!item.backgroundColor;
             const isRedBadge = idx === 1;
-            const badgeClasses = isRedBadge
+            const badgeClasses = hasCustomBg
+              ? 'text-white'
+              : isRedBadge
               ? 'bg-[#ff4c60] text-white'
               : 'bg-white text-[#101010] shadow-[0_2px_10px_rgba(0,0,0,0.1)]';
             const imgUrl = formatImageUrl(item.image);
@@ -50,7 +53,8 @@ export default function LatestArticlesGrid({ articles = [] }) {
               >
                 {/* Badge matching .eg-badge */}
                 <span
-                  className={`absolute top-[15px] left-[15px] z-10 px-[14px] py-[5px] text-[12px] font-semibold rounded-[3px] font-['Inter',sans-serif] pointer-events-none ${badgeClasses}`}
+                  style={hasCustomBg ? { backgroundColor: item.backgroundColor } : undefined}
+                  className={`absolute top-[15px] left-[15px] z-10 px-[14px] py-[5px] text-[12px] font-semibold rounded-[3px] font-['Inter',sans-serif] pointer-events-none shadow-sm ${badgeClasses}`}
                 >
                   {item.category || 'News'}
                 </span>

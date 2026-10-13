@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchApi } from '../../services/api';
+import HtmlEditor from '../../components/admin/HtmlEditor';
+import Pagination from '../../components/common/Pagination';
 
 export default function AdminPage() {
   const [token, setToken] = useState(
@@ -36,22 +38,38 @@ export default function AdminPage() {
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const CARDS_PER_PAGE = 10;
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Article Modal State
-  const [articleModalOpen, setArticleModalOpen] = useState(false);
+  // News View State: 'list' (10-card dashboard) or 'editor' (Add / Edit News view)
+  const [newsView, setNewsView] = useState('list');
   const [editingArticleId, setEditingArticleId] = useState(null);
+  const [galleryInput, setGalleryInput] = useState('');
   const [artForm, setArtForm] = useState({
     title: '',
+    titleEn: '',
+    slug: '',
     category: 'Technology',
+    categories: [],
     author: 'Staff Reporter',
     excerpt: '',
     content: '',
     image: '',
+    gallery: [],
     tags: '',
-    readTime: '4 min read',
+    media: 'standard',
+    videoUrl: '',
     featured: false,
     breaking: false,
+    mainNews: false,
+    popular: false,
+    date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    readTime: '4 min read',
+    backgroundColor: '#c91f26',
+    likes: 0,
+    views: 0,
     published: true,
   });
 
@@ -99,7 +117,7 @@ export default function AdminPage() {
   const loadDashboardData = async () => {
     try {
       const [artRes, catRes, authRes] = await Promise.all([
-        fetchApi('/news?limit=100').catch(() => null),
+        fetchApi('/news?limit=1000').catch(() => null),
         fetchApi('/categories').catch(() => null),
         fetchApi('/authors').catch(() => null),
       ]);
@@ -163,41 +181,69 @@ export default function AdminPage() {
     setUser(null);
   };
 
-  // Article Modal Actions
+  // Article Editor Actions (In-page view, matching screenshot)
   const openNewArticleModal = () => {
     setEditingArticleId(null);
+    setGalleryInput('');
     setArtForm({
       title: '',
+      titleEn: '',
+      slug: '',
       category: categories[0]?.label || 'Technology',
+      categories: [],
       author: user?.name || 'HEXA NEWS Admin',
       excerpt: '',
       content: '',
       image: '',
+      gallery: [],
       tags: '',
-      readTime: '4 min read',
+      media: 'standard',
+      videoUrl: '',
       featured: false,
       breaking: false,
+      mainNews: false,
+      popular: false,
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      readTime: '4 min read',
+      backgroundColor: '#c91f26',
+      likes: 0,
+      views: 0,
       published: true,
     });
-    setArticleModalOpen(true);
+    setNewsView('editor');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const openEditArticleModal = (art) => {
     setEditingArticleId(art._id || art.slug);
+    setGalleryInput('');
     setArtForm({
       title: art.title || '',
+      titleEn: art.titleEn || '',
+      slug: art.slug || art.engSlug || '',
       category: art.category || 'Technology',
+      categories: Array.isArray(art.categories) ? art.categories : [],
       author: art.author || 'Staff Reporter',
       excerpt: art.excerpt || art.description || '',
       content: art.content || art.description || '',
       image: art.image || '',
+      gallery: Array.isArray(art.gallery) ? art.gallery : [],
       tags: Array.isArray(art.tags) ? art.tags.join(', ') : art.tags || '',
-      readTime: art.readTime || '4 min read',
+      media: art.media || (art.videoUrl ? 'video' : 'standard'),
+      videoUrl: art.videoUrl || '',
       featured: !!art.featured,
       breaking: !!art.breaking,
+      mainNews: !!art.mainNews,
+      popular: !!art.popular,
+      date: art.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      readTime: art.readTime || '4 min read',
+      backgroundColor: art.backgroundColor || '#c91f26',
+      likes: art.likes || 0,
+      views: art.views || 0,
       published: art.published !== false,
     });
-    setArticleModalOpen(true);
+    setNewsView('editor');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSaveArticle = async (e) => {
@@ -209,10 +255,14 @@ export default function AdminPage() {
 
     const payload = {
       ...artForm,
-      tags: artForm.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      featured: !!artForm.featured,
+      breaking: !!artForm.breaking,
+      mainNews: !!artForm.mainNews,
+      popular: !!artForm.popular,
+      media: artForm.videoUrl?.trim() ? 'video' : (artForm.media || 'standard'),
+      tags: typeof artForm.tags === 'string'
+        ? artForm.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : (Array.isArray(artForm.tags) ? artForm.tags : []),
     };
 
     const endpoint = editingArticleId ? `/news/${editingArticleId}` : '/news';
@@ -234,10 +284,37 @@ export default function AdminPage() {
       }
 
       showToast(editingArticleId ? 'Article updated!' : 'Article published!', 'success');
-      setArticleModalOpen(false);
+      setNewsView('list');
       loadDashboardData();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  const handleGalleryFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch('/api/upload/image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setArtForm((prev) => ({
+          ...prev,
+          gallery: [...(prev.gallery || []), data.url],
+        }));
+        showToast('Gallery image added!', 'success');
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
     }
   };
 
@@ -346,13 +423,45 @@ export default function AdminPage() {
     }
   };
 
-  const filteredArticles = articles.filter(
-    (a) =>
-      !searchQuery ||
-      a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredArticles = articles.filter((a) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      a.title?.toLowerCase().includes(q) ||
+      a.author?.toLowerCase().includes(q) ||
+      a.excerpt?.toLowerCase().includes(q) ||
+      a.category?.toLowerCase().includes(q) ||
+      a.categoryMl?.toLowerCase().includes(q);
+
+    const matchesCategory =
+      selectedCategory === 'ALL' ||
+      !selectedCategory ||
+      a.category?.toLowerCase() === selectedCategory.toLowerCase() ||
+      a.categoryMl?.toLowerCase() === selectedCategory.toLowerCase() ||
+      (Array.isArray(a.categories) && a.categories.some((c) => c.toLowerCase() === selectedCategory.toLowerCase()));
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Pagination & stats calculation for News Management
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / CARDS_PER_PAGE));
+  const paginatedArticles = filteredArticles.slice(
+    (currentPage - 1) * CARDS_PER_PAGE,
+    currentPage * CARDS_PER_PAGE
   );
+  const featuredCount = articles.filter((a) => a.featured === true).length;
+
+  // Reset to first page when search query or category filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  // Adjust current page if total pages decreases (e.g., after deletion)
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   // ==========================================
   // VIEW 1: LOGIN CARD (When not signed in)
@@ -467,7 +576,7 @@ export default function AdminPage() {
           <nav className="mt-2">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: 'bi-grid' },
-              { id: 'articles', label: 'Articles', icon: 'bi-newspaper' },
+              { id: 'articles', label: 'News Management', icon: 'bi-newspaper' },
               { id: 'categories', label: 'Categories', icon: 'bi-tags' },
               { id: 'authors', label: 'Authors', icon: 'bi-people' },
               { id: 'settings', label: 'Settings', icon: 'bi-gear' },
@@ -477,7 +586,10 @@ export default function AdminPage() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === 'articles') setNewsView('list');
+                  }}
                   className={`w-full flex items-center gap-3 px-6 py-3 text-[14px] font-medium transition-all cursor-pointer text-left ${
                     isActive
                       ? 'text-white bg-[rgba(201,31,38,0.12)] border-r-[3px] border-[#c91f26]'
@@ -630,103 +742,644 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* TAB 2: ARTICLES */}
+        {/* TAB 2: ARTICLES (NEWS MANAGEMENT) */}
         {activeTab === 'articles' && (
-          <div className="bg-white border border-[#e5e5e5] rounded-[12px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-[18px] font-bold text-[#111111]">All Articles</h3>
+          <div className="space-y-6">
+            {/* Header with Breadcrumb and Primary Add Button */}
+            <div id="news-management-top" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm font-semibold text-[#64748b]">Admin</span>
+                <i className="bi bi-chevron-right text-[11px] text-[#94a3b8]"></i>
+                <h2 className="text-xl sm:text-2xl font-bold text-[#0f172a] tracking-tight">
+                  News Management
+                </h2>
+                {newsView === 'list' && (
+                  <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#fee2e2] text-[#c91f26]">
+                    {filteredArticles.length}
+                  </span>
+                )}
+              </div>
+
+              {newsView === 'list' && (
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={openNewArticleModal}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition active:scale-[0.98] cursor-pointer"
+                  >
+                    <i className="bi bi-plus-lg font-bold"></i>
+                    <span>Add News</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* CONDITION: IN-PAGE EDITOR VIEW vs 10-CARD LIST VIEW */}
+            {newsView === 'editor' ? (
+              <div className="bg-white rounded-2xl border border-[#e5e7eb] shadow-sm p-6 sm:p-8">
+                {/* Header inside card: Add New News & Cancel button */}
+                <div className="flex items-center justify-between pb-5 mb-6 border-b border-[#f1f5f9]">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#111827]">
+                    {editingArticleId ? 'Edit Article' : 'Add New News'}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewsView('list');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#475569] text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer"
+                  >
+                    <i className="bi bi-x-lg text-xs"></i>
+                    <span>Cancel</span>
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveArticle} className="space-y-6">
+                  {/* TWO COLUMN GRID: Basic Information (Left) & Media & Display (Right) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                    {/* LEFT COLUMN: Basic Information */}
+                    <div className="space-y-5">
+                      <h4 className="text-[16px] font-bold text-[#1f2937]">Basic Information</h4>
+
+                      {/* Title (Malayalam / Headline) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[13px] font-semibold text-[#374151]">
+                            Title (Malayalam) *
+                          </label>
+                          {artForm.backgroundColor && (
+                            <span className="text-[11px] text-[#6b7280] flex items-center gap-1.5">
+                              <span>Title BG:</span>
+                              <span
+                                className="w-3.5 h-3.5 rounded-full inline-block border border-black/10 shadow-sm"
+                                style={{ backgroundColor: artForm.backgroundColor }}
+                              ></span>
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={artForm.title}
+                          onChange={(e) => setArtForm({ ...artForm, title: e.target.value })}
+                          placeholder="Enter news title in Malayalam"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                        />
+                        {/* Live Title Banner Preview */}
+                        {artForm.title && (
+                          <div
+                            style={{ backgroundColor: artForm.backgroundColor || '#c91f26' }}
+                            className="mt-2.5 p-3 rounded-lg text-white text-xs font-semibold shadow-sm transition-colors flex items-center justify-between gap-2"
+                          >
+                            <span className="truncate">{artForm.title}</span>
+                            <span className="text-[10px] uppercase font-bold opacity-80 whitespace-nowrap bg-white/20 px-2 py-0.5 rounded">Title BG Preview</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Excerpt */}
+                      <div>
+                        <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                          Excerpt
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={artForm.excerpt}
+                          onChange={(e) => setArtForm({ ...artForm, excerpt: e.target.value })}
+                          placeholder="Brief summary of the news"
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                        />
+                      </div>
+
+
+                      {/* Primary Category & Author (2-cols) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Primary Category *
+                          </label>
+                          <select
+                            value={artForm.category}
+                            onChange={(e) => setArtForm({ ...artForm, category: e.target.value })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          >
+                            {categories.map((c, i) => (
+                              <option key={i} value={c.label}>
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Author
+                          </label>
+                          <select
+                            value={artForm.author}
+                            onChange={(e) => setArtForm({ ...artForm, author: e.target.value })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          >
+                            {authors.length > 0 ? (
+                              authors.map((a, i) => (
+                                <option key={i} value={a.name}>
+                                  {a.name}
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value="Staff Reporter">Staff Reporter</option>
+                                <option value="HEXA NEWS Admin">HEXA NEWS Admin</option>
+                                <option value="Chief Editor">Chief Editor</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+                      </div>
+
+
+                      {/* Date & Read Time (2-cols) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Date
+                          </label>
+                          <input
+                            type="text"
+                            value={artForm.date || ''}
+                            onChange={(e) => setArtForm({ ...artForm, date: e.target.value })}
+                            placeholder="e.g., June 27, 2026"
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Read Time
+                          </label>
+                          <input
+                            type="text"
+                            value={artForm.readTime || ''}
+                            onChange={(e) => setArtForm({ ...artForm, readTime: e.target.value })}
+                            placeholder="e.g., 4 min read"
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Media & Display */}
+                    <div className="space-y-5">
+                      <h4 className="text-[16px] font-bold text-[#1f2937]">Media & Display</h4>
+
+                      {/* Image URL or Upload */}
+                      <div>
+                        <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                          Image URL or Upload
+                        </label>
+                        <input
+                          type="text"
+                          value={artForm.image || ''}
+                          onChange={(e) => setArtForm({ ...artForm, image: e.target.value })}
+                          placeholder="https://... or /uploads/..."
+                          className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition mb-2"
+                        />
+                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-[#064e3b] hover:bg-[#043d2e] text-white text-xs font-semibold rounded-lg cursor-pointer transition shadow-sm">
+                          <i className="bi bi-upload"></i>
+                          <span>Upload Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {artForm.image && (
+                          <div className="mt-3 h-28 w-44 rounded-lg overflow-hidden border border-[#e5e7eb] shadow-sm">
+                            <img src={artForm.image} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Gallery Images (multiple) */}
+                      <div>
+                        <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                          Gallery Images (multiple)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={galleryInput}
+                            onChange={(e) => setGalleryInput(e.target.value)}
+                            placeholder="Image URL"
+                            className="flex-1 px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (galleryInput.trim()) {
+                                setArtForm({
+                                  ...artForm,
+                                  gallery: [...(artForm.gallery || []), galleryInput.trim()],
+                                });
+                                setGalleryInput('');
+                              }
+                            }}
+                            className="px-4 py-2.5 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#374151] text-xs font-semibold rounded-lg transition"
+                          >
+                            + Add URL
+                          </button>
+                          <label className="px-4 py-2.5 bg-[#064e3b] hover:bg-[#043d2e] text-white text-xs font-semibold rounded-lg cursor-pointer transition flex items-center gap-1.5 shadow-sm">
+                            <i className="bi bi-upload"></i>
+                            <span>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleGalleryFileUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                        {/* Gallery Thumbnails */}
+                        {artForm.gallery && artForm.gallery.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2.5">
+                            {artForm.gallery.map((gUrl, gIdx) => (
+                              <div key={gIdx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#d1d5db] group">
+                                <img src={gUrl} alt={`Gallery ${gIdx}`} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setArtForm({
+                                      ...artForm,
+                                      gallery: artForm.gallery.filter((_, idx) => idx !== gIdx),
+                                    });
+                                  }}
+                                  className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] transition"
+                                  title="Remove image"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Media Type & Video URL (2-cols) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Media Type
+                          </label>
+                          <select
+                            value={artForm.media || 'standard'}
+                            onChange={(e) => setArtForm({ ...artForm, media: e.target.value })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          >
+                            <option value="standard">Standard</option>
+                            <option value="video">Video</option>
+                            <option value="gallery">Gallery</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                            Video URL (YouTube, Vimeo, etc.)
+                          </label>
+                          <input
+                            type="text"
+                            value={artForm.videoUrl || ''}
+                            onChange={(e) => setArtForm({ ...artForm, videoUrl: e.target.value })}
+                            placeholder="Paste any video link: YouTube..."
+                            className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Simple Placement Checkboxes without separate highlighted box */}
+                      {/* Featured Checkbox */}
+                      <div className="pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer text-[13px] font-semibold text-[#1f2937]">
+                          <input
+                            type="checkbox"
+                            checked={!!artForm.featured}
+                            onChange={(e) => setArtForm({ ...artForm, featured: e.target.checked })}
+                            className="w-4 h-4 text-[#c91f26] rounded border-[#d1d5db] focus:ring-[#c91f26] cursor-pointer"
+                          />
+                          <span>🌟 Featured Story (Main Home Page Carousel)</span>
+                        </label>
+                      </div>
+
+                      {/* Title Background Color swatch */}
+                      <div className="pt-2">
+                        <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                          Title / Badge Background Color
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={artForm.backgroundColor || '#c91f26'}
+                            onChange={(e) => setArtForm({ ...artForm, backgroundColor: e.target.value })}
+                            className="w-9 h-9 p-0.5 rounded border border-[#d1d5db] cursor-pointer"
+                          />
+                          <span className="text-xs font-mono text-[#6b7280]">
+                            {artForm.backgroundColor || '#c91f26'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CONTENT SECTION (Full-Width Card Below) */}
+                  <div className="pt-6 border-t border-[#e5e7eb] space-y-4">
+                    <h4 className="text-[16px] font-bold text-[#1f2937]">Content</h4>
+
+                    <div>
+                      <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                        Body Content *
+                      </label>
+                      <HtmlEditor
+                        value={artForm.content}
+                        onChange={(content) => setArtForm({ ...artForm, content })}
+                        placeholder="Write the full news content here..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-semibold text-[#374151] mb-1.5">
+                        Tags <span className="text-xs text-[#6b7280] font-normal">(comma separated)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={artForm.tags || ''}
+                        onChange={(e) => setArtForm({ ...artForm, tags: e.target.value })}
+                        placeholder="e.g., kerala, rain, alert"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* BOTTOM ACTIONS (Matching image: Red Publish News + Cancel) */}
+                  <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#e5e7eb]">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-lg shadow-sm transition active:scale-[0.98] cursor-pointer"
+                    >
+                      <i className="bi bi-floppy"></i>
+                      <span>{editingArticleId ? 'Update Article' : 'Publish News'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewsView('list');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-5 py-2.5 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#374151] text-sm font-semibold rounded-lg transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <>
+                {/* Filter & Search Bar matching screenshot */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+              {/* Search input with icon */}
+              <div className="relative flex-1 w-full">
+                <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] text-sm"></i>
+                <input
+                  type="text"
+                  placeholder="Search news..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-4 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm text-[#0f172a] placeholder-[#94a3b8] outline-none focus:border-[#c91f26] focus:bg-white transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#475569] text-sm cursor-pointer"
+                  >
+                    <i className="bi bi-x-circle-fill"></i>
+                  </button>
+                )}
+              </div>
+
+              {/* Category dropdown with filter icon */}
+              <div className="relative w-full sm:w-64">
+                <i className="bi bi-funnel absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-sm pointer-events-none"></i>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm font-medium text-[#334155] outline-none focus:border-[#c91f26] focus:bg-white appearance-none cursor-pointer transition"
+                >
+                  <option value="ALL">All Categories</option>
+                  {categories.map((cat, idx) => (
+                    <option key={idx} value={cat.slug || cat.label}>
+                      {cat.label || cat.slug}
+                    </option>
+                  ))}
+                </select>
+                <i className="bi bi-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
+              </div>
+
+              {/* Secondary Add News button matching right filter element */}
               <button
                 type="button"
                 onClick={openNewArticleModal}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#c91f26] hover:bg-[#a8191f] text-white text-[13px] font-semibold rounded-[8px] transition cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
               >
-                <i className="bi bi-plus-lg"></i>
-                <span>New Article</span>
+                <i className="bi bi-plus-lg font-bold"></i>
+                <span>Add News</span>
               </button>
             </div>
 
-            <div className="mb-5 flex gap-2">
-              <input
-                type="text"
-                placeholder="Search articles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 bg-[#f9f9f9] border border-[#dddddd] rounded-[8px] text-[13px] text-[#111111] outline-none focus:border-[#c91f26]"
-              />
-            </div>
-
+            {/* Content: Cards Grid View */}
             {filteredArticles.length === 0 ? (
-              <div className="py-16 text-center text-[#888888] text-[14px]">
-                No articles found
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-16 text-center shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-[#f1f5f9] flex items-center justify-center mx-auto mb-4 text-[#94a3b8] text-2xl">
+                  <i className="bi bi-newspaper"></i>
+                </div>
+                <h4 className="text-base font-bold text-[#0f172a] mb-1">No news articles found</h4>
+                <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-6">
+                  {searchQuery || selectedCategory !== 'ALL'
+                    ? 'No articles match your current search and category filters. Try clearing your search.'
+                    : 'Get started by creating your first article.'}
+                </p>
+                {searchQuery || selectedCategory !== 'ALL' ? (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
+                    className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#334155] text-xs font-semibold rounded-lg transition cursor-pointer"
+                  >
+                    Clear Filters
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openNewArticleModal}
+                    className="px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-xs font-semibold rounded-lg transition shadow-sm cursor-pointer"
+                  >
+                    + Create First Article
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-[13px]">
-                  <thead>
-                    <tr className="border-b-2 border-[#eeeeee] text-[12px] text-[#888888] uppercase tracking-[1px]">
-                      <th className="py-3 px-3.5">Title</th>
-                      <th className="py-3 px-3.5">Category</th>
-                      <th className="py-3 px-3.5">Author</th>
-                      <th className="py-3 px-3.5">Views</th>
-                      <th className="py-3 px-3.5">Status</th>
-                      <th className="py-3 px-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#f0f0f0]">
-                    {filteredArticles.map((a, idx) => (
-                      <tr key={idx} className="hover:bg-[#fafafa]">
-                        <td className="py-3 px-3.5 max-w-[280px] truncate font-semibold text-[#111111]">
+              /* GRID CARDS VIEW (Matching user screenshot) */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedArticles.map((a, idx) => {
+                  const cardId = a._id || a.slug || idx;
+                  const categoryName = a.categoryMl || a.category || 'News';
+                  const dateStr = a.date ? (a.date.includes('T') ? a.date.split('T')[0] : a.date) : '2026-10-12';
+                  const viewsCount = a.views || 0;
+                  const isFeatured = a.featured === true;
+                  const cleanExcerpt = a.excerpt || (a.content ? a.content.replace(/<[^>]*>/g, '').slice(0, 140) : '');
+
+                  return (
+                    <div
+                      key={cardId}
+                      className="bg-white rounded-2xl border border-[#e2e8f0] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.07)] hover:border-[#cbd5e1] transition-all duration-300 overflow-hidden flex flex-col group"
+                    >
+                      {/* Image with Tag / Badge */}
+                      <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-[#f1f5f9]">
+                        <img
+                          src={a.image || '/images/blog/1.jpg'}
+                          alt={a.title}
+                          onError={(e) => { e.target.src = '/images/blog/1.jpg'; }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                        />
+                        {/* Top-Right Badge: FEATURED or STANDARD */}
+                        <div className="absolute top-3 right-3">
+                          {isFeatured ? (
+                            <span className="inline-block px-2.5 py-1 bg-[#f59e0b] text-[#1c1917] text-[10px] font-black uppercase tracking-wider rounded-md shadow-sm">
+                              FEATURED
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2.5 py-1 bg-[#1e293b]/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-md shadow-sm backdrop-blur-sm">
+                              STANDARD
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content Section */}
+                      <div className="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          {/* Category (Red) & Date | Views (Gray) */}
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="font-bold text-[#c91f26] uppercase tracking-wide truncate max-w-[150px]">
+                              {categoryName}
+                            </span>
+                            <span className="text-[#94a3b8] font-medium flex items-center gap-1.5 shrink-0 text-[11px]">
+                              <span>{dateStr}</span>
+                              <span>|</span>
+                              <span className="flex items-center gap-1">
+                                <i className="bi bi-eye"></i>
+                                <span>{viewsCount}</span>
+                              </span>
+                            </span>
+                          </div>
+
+                          {/* Title */}
+                          <h4 className="font-bold text-[#0f172a] text-[15px] sm:text-[16px] leading-snug line-clamp-2 mb-2 group-hover:text-[#c91f26] transition-colors">
+                            <Link to={`/post-detail?slug=${a.slug}`} target="_blank">
+                              {a.title}
+                            </Link>
+                          </h4>
+
+                          {/* Excerpt */}
+                          <p className="text-xs text-[#64748b] line-clamp-2 leading-relaxed mb-4">
+                            {cleanExcerpt || 'No excerpt available for this article.'}
+                          </p>
+                        </div>
+
+                        {/* Action Buttons (Right-aligned, eye, edit, delete) */}
+                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#f1f5f9]">
                           <Link
                             to={`/post-detail?slug=${a.slug}`}
-                            className="hover:text-[#c91f26]"
+                            target="_blank"
+                            className="w-8 h-8 rounded-lg bg-[#ecfdf5] text-[#059669] hover:bg-[#d1fae5] flex items-center justify-center transition shadow-sm"
+                            title="View live article"
                           >
-                            {a.title}
+                            <i className="bi bi-eye text-sm"></i>
                           </Link>
-                        </td>
-                        <td className="py-3 px-3.5">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#e3f2fd] text-[#1565c0]">
-                            {a.category}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3.5 text-[#555555]">{a.author || '-'}</td>
-                        <td className="py-3 px-3.5 text-[#555555]">{a.views || 0}</td>
-                        <td className="py-3 px-3.5">
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                              a.published !== false
-                                ? 'bg-[#e8f5e9] text-[#2e7d32]'
-                                : 'bg-[#ffebee] text-[#c91f26]'
-                            }`}
-                          >
-                            {a.published !== false ? 'Published' : 'Draft'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3.5 text-right space-x-2">
+
                           <button
                             type="button"
                             onClick={() => openEditArticleModal(a)}
-                            className="p-1.5 px-2.5 border border-[#dddddd] rounded-[6px] text-[#666666] hover:border-[#c91f26] hover:text-[#c91f26] transition"
-                            title="Edit"
+                            className="w-8 h-8 rounded-lg bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] flex items-center justify-center transition shadow-sm cursor-pointer"
+                            title="Edit article"
                           >
-                            <i className="bi bi-pencil text-[12px]"></i>
+                            <i className="bi bi-pencil text-sm"></i>
                           </button>
+
                           <button
                             type="button"
                             onClick={() => handleDeleteArticle(a._id || a.slug)}
-                            className="p-1.5 px-2.5 bg-[#c62828] text-white rounded-[6px] hover:bg-[#b71c1c] transition"
-                            title="Delete"
+                            className="w-8 h-8 rounded-lg bg-[#fef2f2] text-[#dc2626] hover:bg-[#fee2e2] flex items-center justify-center transition shadow-sm cursor-pointer"
+                            title="Delete article"
                           >
-                            <i className="bi bi-trash text-[12px]"></i>
+                            <i className="bi bi-trash text-sm"></i>
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </div>
+
+            {/* Pagination Component (10 cards per page) matching screenshot */}
+            {filteredArticles.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  const anchor = document.getElementById('news-management-top');
+                  if (anchor) {
+                    anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+              />
+            )}
+
+            {/* 4 Bottom Stats Cards matching user screenshot */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                <div className="text-[32px] sm:text-[38px] font-extrabold text-[#c91f26] leading-none mb-2">
+                  {stats.articles || articles.length}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#64748b]">Total News</div>
+              </div>
+
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                <div className="text-[32px] sm:text-[38px] font-extrabold text-[#c91f26] leading-none mb-2">
+                  {featuredCount}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#64748b]">Featured</div>
+              </div>
+
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                <div className="text-[32px] sm:text-[38px] font-extrabold text-[#c91f26] leading-none mb-2">
+                  {categories.length || stats.categories}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#64748b]">Categories</div>
+              </div>
+
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                <div className="text-[32px] sm:text-[38px] font-extrabold text-[#c91f26] leading-none mb-2">
+                  {stats.views ? stats.views.toLocaleString() : '0'}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-[#64748b]">Total Views</div>
+              </div>
+            </div>
+          </>
         )}
+      </div>
+    )}
 
         {/* TAB 3: CATEGORIES */}
         {activeTab === 'categories' && (
@@ -892,162 +1545,7 @@ export default function AdminPage() {
           MODALS
       ========================================== */}
 
-      {/* Article Modal */}
-      {articleModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setArticleModalOpen(false)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-[#c91f26] text-xl"
-            >
-              <i className="bi bi-x-lg"></i>
-            </button>
 
-            <h3 className="text-[18px] font-bold text-[#111111] mb-5">
-              {editingArticleId ? 'Edit Article' : 'New Article'}
-            </h3>
-
-            <form onSubmit={handleSaveArticle} className="space-y-4 text-[13px]">
-              <div>
-                <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={artForm.title}
-                  onChange={(e) => setArtForm({ ...artForm, title: e.target.value })}
-                  placeholder="Article title"
-                  className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                    Category *
-                  </label>
-                  <select
-                    value={artForm.category}
-                    onChange={(e) => setArtForm({ ...artForm, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                  >
-                    {categories.length > 0 ? (
-                      categories.map((c, i) => (
-                        <option key={i} value={c.label}>
-                          {c.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Technology">Technology</option>
-                        <option value="Business">Business</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Health">Health</option>
-                        <option value="Asia">Asia</option>
-                        <option value="Europe">Europe</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                    Author
-                  </label>
-                  <input
-                    type="text"
-                    value={artForm.author}
-                    onChange={(e) => setArtForm({ ...artForm, author: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                  Excerpt
-                </label>
-                <textarea
-                  rows={2}
-                  value={artForm.excerpt}
-                  onChange={(e) => setArtForm({ ...artForm, excerpt: e.target.value })}
-                  placeholder="Short description"
-                  className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                  Content *
-                </label>
-                <textarea
-                  rows={5}
-                  required
-                  value={artForm.content}
-                  onChange={(e) => setArtForm({ ...artForm, content: e.target.value })}
-                  placeholder="Full article content"
-                  className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                    <i className="bi bi-link-45deg"></i> Image URL
-                  </label>
-                  <input
-                    type="text"
-                    value={artForm.image}
-                    onChange={(e) => setArtForm({ ...artForm, image: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#888888] mb-1">
-                    <i className="bi bi-upload"></i> Or Upload Image
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileUpload}
-                    className="w-full px-3 py-1.5 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-xs text-[#555555] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#c91f26] file:text-white"
-                  />
-                </div>
-              </div>
-
-              {artForm.image && (
-                <div className="mt-2 h-28 w-full rounded-lg overflow-hidden border border-gray-200">
-                  <img
-                    src={artForm.image}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setArticleModalOpen(false)}
-                  className="px-4 py-2 border border-[#dddddd] text-[#666666] text-xs font-semibold rounded-lg hover:border-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#c91f26] hover:bg-[#a8191f] text-white text-xs font-semibold rounded-lg shadow-sm"
-                >
-                  Save Article
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Category Modal */}
       {categoryModalOpen && (

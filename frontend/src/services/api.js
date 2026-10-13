@@ -25,9 +25,16 @@ export async function fetchApi(endpoint, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
+  const token = localStorage.getItem('hexa_token') || localStorage.getItem('hexa_admin_token');
+  const headers = { ...options.headers };
+  if (token && !headers.Authorization && !headers.authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
+      headers,
       signal: options.signal || controller.signal,
     });
     clearTimeout(timeoutId);

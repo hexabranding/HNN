@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
-import { fetchApi } from '../../services/api';
+import { fetchApi, formatImageUrl } from '../../services/api';
 
 export default function PostDetailPage() {
   const { slug: routeSlug } = useParams();
@@ -68,85 +68,154 @@ export default function PostDetailPage() {
   }, [activeSlug]);
 
   const current = article || defaultArticle;
+  const themeColor = current.backgroundColor || '#c91f26';
+  const featuredImg = formatImageUrl(current.image || defaultArticle.image);
 
   return (
-    <div className="w-full">
-        {/* 1. Post Hero Banner matching post-detail.html */}
-        <section
-          className="relative min-h-[480px] sm:min-h-[540px] flex items-end bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${current.image})` }}
-        >
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-
-          <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 w-full">
-            <span className="inline-block px-4 py-1.5 bg-[#ff4c60] text-white text-xs font-bold uppercase rounded-[3px] tracking-wider mb-4 shadow-sm">
-              {current.category || current.badge || 'News'}
-            </span>
-
-            <h1 className="font-['Prompt',sans-serif] text-3xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-4xl mb-6 drop-shadow-md">
-              {current.title}
-            </h1>
-
-            {/* Post Hero Meta */}
-            <div className="flex flex-wrap items-center gap-6 text-sm text-white/85">
-              <span className="flex items-center gap-2">
-                <img
-                  src={current.authorImg || 'https://i.pravatar.cc/60?img=12'}
-                  alt={current.author || 'Author'}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-white/40"
-                />
-                <span className="font-semibold text-white">{current.author || 'Staff Writer'}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <i className="bi bi-calendar3 text-[#ff4c60]"></i>
-                {current.date ? new Date(current.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : defaultArticle.date}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <i className="bi bi-eye text-[#ff4c60]"></i>
-                {current.views || '4.5k views'}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <i className="bi bi-clock text-[#ff4c60]"></i>
-                {current.readTime || '6 min read'}
-              </span>
-            </div>
+    <div className="w-full bg-[#fdfbf7]/30 min-h-screen">
+      {/* 1. Clean Featured Image Container (Without text overlay) */}
+      {featuredImg && (
+        <section className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+          <div className="w-full max-h-[500px] sm:max-h-[580px] rounded-2xl overflow-hidden shadow-sm bg-gray-100 border border-gray-200/80">
+            <img
+              src={featuredImg}
+              alt={current.title}
+              className="w-full h-full max-h-[500px] sm:max-h-[580px] object-cover block"
+            />
           </div>
         </section>
+      )}
 
-        {/* 2. Main Article Content Area */}
-        <section className="py-16 sm:py-20 bg-white">
-          <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-              {/* Article Column (8 cols) */}
-              <div className="lg:col-span-8">
-                <article className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg">
-                  {/* Lead paragraph */}
-                  <p className="text-xl sm:text-2xl font-normal text-gray-900 leading-relaxed mb-6 font-serif">
-                    {current.lead || (current.paragraphs && current.paragraphs[0])}
-                  </p>
+      {/* 2. Main Article Content Area (All text items & content arranged cleanly below the image) */}
+      <section className="py-8 sm:py-12 bg-white mt-4 sm:mt-6 border-t border-gray-100">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            {/* Article Column (8 cols) */}
+            <div className="lg:col-span-8">
+              <article className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg">
+                
+                {/* Main Headline Title Banner with custom backgroundColor */}
+                <div
+                  style={{ backgroundColor: themeColor }}
+                  className="p-6 sm:p-8 rounded-2xl text-white shadow-md mb-6 relative overflow-hidden transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-3.5">
+                    <span className="inline-block px-3.5 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold uppercase rounded-md tracking-wider border border-white/25 font-['Prompt',sans-serif]">
+                      {current.category || current.badge || 'News'}
+                    </span>
+                  </div>
 
-                  {/* Body paragraphs */}
-                  {(current.paragraphs || defaultArticle.paragraphs).map((p, idx) => (
-                    <p key={idx} className="text-gray-700 text-base sm:text-[17px] leading-[1.8] mb-6">
-                      {p}
-                    </p>
-                  ))}
+                  <h1 className="font-['Prompt',sans-serif] text-2xl sm:text-3xl lg:text-[38px] font-bold text-white leading-[1.3] drop-shadow-sm">
+                    {current.title}
+                  </h1>
+                </div>
 
-                  {/* Blockquote matching post-blockquote in style.css */}
-                  <blockquote className="bg-[#f2f2de] border-l-4 border-[#ff4c60] p-7 sm:p-9 rounded-r-lg my-8 relative">
-                    <i className="bi bi-quote text-4xl text-[#ff4c60]/40 leading-none block mb-2"></i>
-                    <p className="font-['Prompt',sans-serif] text-lg sm:text-xl italic text-gray-900 leading-relaxed mb-3">
-                      "{current.quote || defaultArticle.quote}"
-                    </p>
-                    <cite className="not-italic text-sm font-semibold text-[#ff4c60] block">
-                      — {current.quoteAuthor || defaultArticle.quoteAuthor}
-                    </cite>
-                  </blockquote>
+                {/* Post Meta Info (Author, Date, Views, Read Time) */}
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 pb-5 mb-8 border-b border-gray-200">
+                  <span className="flex items-center gap-2">
+                    <img
+                      src={current.authorImg || 'https://i.pravatar.cc/60?img=12'}
+                      alt={current.author || 'Author'}
+                      className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"
+                    />
+                    <span className="font-semibold text-gray-900">{current.author || 'Staff Writer'}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <i className="bi bi-calendar3" style={{ color: themeColor }}></i>
+                    <span>
+                      {current.date
+                        ? new Date(current.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                        : defaultArticle.date}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <i className="bi bi-eye" style={{ color: themeColor }}></i>
+                    <span>{current.views !== undefined ? `${current.views} views` : '4.5k views'}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <i className="bi bi-clock" style={{ color: themeColor }}></i>
+                    <span>{current.readTime || '3 min read'}</span>
+                  </span>
+                </div>
 
-                  <p className="text-gray-700 text-base sm:text-[17px] leading-[1.8] mb-8">
-                    As we look ahead to future seasons, the combination of advanced technology and human persistence will continue to rewrite the boundaries of what is possible.
-                  </p>
+                {/* Video Player (if videoUrl is present) */}
+                {current.videoUrl && (
+                  <div className="mb-8 rounded-2xl overflow-hidden shadow-md aspect-video bg-black">
+                    {current.videoUrl.includes('youtube.com') || current.videoUrl.includes('youtu.be') ? (
+                      <iframe
+                        src={
+                          current.videoUrl.includes('watch?v=')
+                            ? current.videoUrl.replace('watch?v=', 'embed/').split('&')[0]
+                            : current.videoUrl.replace('youtu.be/', 'www.youtube.com/embed/')
+                        }
+                        title={current.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={current.videoUrl} controls className="w-full h-full object-contain" />
+                    )}
+                  </div>
+                )}
+
+                {/* Photo Gallery (if gallery images present) */}
+                {current.gallery && current.gallery.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Photo Gallery</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {current.gallery.map((gImg, gIdx) => (
+                        <div key={gIdx} className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 shadow-sm border border-gray-200">
+                          <img
+                            src={formatImageUrl(gImg)}
+                            alt={`Gallery ${gIdx + 1}`}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                  {current.content ? (
+                    <div
+                      className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full"
+                      dangerouslySetInnerHTML={{ __html: current.content }}
+                    />
+                  ) : (
+                    <>
+                      {/* Lead paragraph */}
+                      <p className="text-xl sm:text-2xl font-normal text-gray-900 leading-relaxed mb-6 font-serif">
+                        {current.lead || (current.paragraphs && current.paragraphs[0])}
+                      </p>
+
+                      {/* Body paragraphs */}
+                      {(current.paragraphs || defaultArticle.paragraphs).map((p, idx) => (
+                        <p key={idx} className="text-gray-700 text-base sm:text-[17px] leading-[1.8] mb-6">
+                          {p}
+                        </p>
+                      ))}
+
+                      {/* Blockquote matching post-blockquote in style.css */}
+                      <blockquote
+                        style={{ borderLeftColor: themeColor }}
+                        className="bg-[#f2f2de] border-l-4 p-7 sm:p-9 rounded-r-lg my-8 relative"
+                      >
+                        <i
+                          className="bi bi-quote text-4xl leading-none block mb-2 opacity-40"
+                          style={{ color: themeColor }}
+                        ></i>
+                        <p className="font-['Prompt',sans-serif] text-lg sm:text-xl italic text-gray-900 leading-relaxed mb-3">
+                          "{current.quote || defaultArticle.quote}"
+                        </p>
+                        <cite
+                          style={{ color: themeColor }}
+                          className="not-italic text-sm font-semibold block"
+                        >
+                          — {current.quoteAuthor || defaultArticle.quoteAuthor}
+                        </cite>
+                      </blockquote>
+                    </>
+                  )}
 
                   {/* Post Tags & Share row matching style.css lines 2106-2150 */}
                   <div className="py-6 border-y border-gray-200 flex flex-wrap items-center justify-between gap-4 my-10">
@@ -159,7 +228,7 @@ export default function PostDetailPage() {
                         <Link
                           key={idx}
                           to={`/blog-standard?tag=${encodeURIComponent(tag)}`}
-                          className="px-3.5 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:bg-[#ff4c60] hover:text-white hover:border-[#ff4c60] transition-colors"
+                          className="px-3.5 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-colors"
                         >
                           #{tag}
                         </Link>
@@ -178,7 +247,7 @@ export default function PostDetailPage() {
                         <a
                           key={idx}
                           href={s.url}
-                          className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 hover:bg-[#ff4c60] hover:text-white flex items-center justify-center text-xs transition-colors"
+                          className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-900 hover:text-white flex items-center justify-center text-xs transition-colors"
                         >
                           <i className={`bi ${s.icon}`}></i>
                         </a>
@@ -194,19 +263,22 @@ export default function PostDetailPage() {
                       className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
                     />
                     <div className="text-center sm:text-left">
-                      <span className="text-xs font-bold text-[#ff4c60] uppercase tracking-wider block mb-1">
+                      <span
+                        style={{ color: themeColor }}
+                        className="text-xs font-bold uppercase tracking-wider block mb-1"
+                      >
                         Written by
                       </span>
                       <h4 className="font-['Prompt',sans-serif] text-xl font-bold text-gray-900 mb-2">
                         {current.author || 'Daniel Reed'}
                       </h4>
                       <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                        Senior sports journalist and investigative features writer with over a decade of reporting across major international championships.
+                        Senior journalist and investigative features writer with over a decade of reporting across major international championships and news.
                       </p>
                       <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-gray-500">
-                        <a href="#" className="hover:text-[#ff4c60]"><i className="bi bi-twitter-x"></i></a>
-                        <a href="#" className="hover:text-[#ff4c60]"><i className="bi bi-linkedin"></i></a>
-                        <a href="#" className="hover:text-[#ff4c60]"><i className="bi bi-envelope"></i></a>
+                        <a href="#" className="hover:text-gray-900"><i className="bi bi-twitter-x"></i></a>
+                        <a href="#" className="hover:text-gray-900"><i className="bi bi-linkedin"></i></a>
+                        <a href="#" className="hover:text-gray-900"><i className="bi bi-envelope"></i></a>
                       </div>
                     </div>
                   </div>
@@ -249,7 +321,10 @@ export default function PostDetailPage() {
                             <p className="text-sm text-gray-600 leading-relaxed mb-2">
                               {c.text}
                             </p>
-                            <button className="text-xs font-semibold text-[#ff4c60] hover:underline flex items-center gap-1 cursor-pointer">
+                            <button
+                              style={{ color: themeColor }}
+                              className="text-xs font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                            >
                               <i className="bi bi-reply"></i> Reply
                             </button>
                           </div>
@@ -271,24 +346,25 @@ export default function PostDetailPage() {
                             type="text"
                             required
                             placeholder="Your Name *"
-                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-[#ff4c60]"
+                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500"
                           />
                           <input
                             type="email"
                             required
                             placeholder="Your Email *"
-                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-[#ff4c60]"
+                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500"
                           />
                         </div>
                         <textarea
                           required
                           rows={4}
                           placeholder="Write your comment here... *"
-                          className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-[#ff4c60] resize-y"
+                          className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500 resize-y"
                         ></textarea>
                         <button
                           type="submit"
-                          className="px-6 py-2.5 bg-[#ff4c60] hover:bg-[#548f6f] text-white font-['Prompt',sans-serif] font-semibold text-sm rounded-full transition-colors cursor-pointer shadow-md"
+                          style={{ backgroundColor: themeColor }}
+                          className="px-6 py-2.5 text-white font-['Prompt',sans-serif] font-semibold text-sm rounded-full transition-opacity hover:opacity-90 cursor-pointer shadow-md"
                         >
                           Post Comment
                         </button>

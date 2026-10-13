@@ -52,16 +52,26 @@ export default function HeroSlider({ articles = [] }) {
                 }}
               />
 
-              {/* Slide Content: exactly like original HTML (only the title is visible) */}
+              {/* Slide Content: matching original HTML with dynamic category badge */}
               <div className="relative z-[2] h-full flex items-center px-[8%] max-w-[750px]">
-                <h1 className="text-3xl sm:text-5xl lg:text-[48px] font-bold text-white font-prompt leading-[1.2] drop-shadow-sm">
-                  <a
-                    href={`/post-detail?slug=${item.slug}`}
-                    className="hover:text-red-400 transition-colors"
-                  >
-                    {item.title}
-                  </a>
-                </h1>
+                <div>
+                  {item.category && (
+                    <span
+                      style={{ backgroundColor: item.backgroundColor || '#c91f26' }}
+                      className="inline-block px-3.5 py-1 text-white text-xs font-bold uppercase rounded-[3px] tracking-wider mb-3 shadow-sm font-['Prompt',sans-serif]"
+                    >
+                      {item.category}
+                    </span>
+                  )}
+                  <h1 className="text-3xl sm:text-5xl lg:text-[48px] font-bold text-white font-prompt leading-[1.2] drop-shadow-sm">
+                    <a
+                      href={`/post-detail?slug=${item.slug}`}
+                      className="hover:text-red-400 transition-colors"
+                    >
+                      {item.title}
+                    </a>
+                  </h1>
+                </div>
               </div>
             </SwiperSlide>
           );

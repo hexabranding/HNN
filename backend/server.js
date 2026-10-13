@@ -9,6 +9,14 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
+// Middlewares
+const requestLogger = require("./middleware/logger");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
+
+// Controllers
+const { serveImage } = require("./controllers/uploadController");
+
+// Routes
 const authRoutes = require("./routes/auth");
 const newsRoutes = require("./routes/news");
 const categoriesRoutes = require("./routes/categories");
@@ -18,54 +26,52 @@ const authorsRoutes = require("./routes/authors");
 const settingsRoutes = require("./routes/settings");
 const adsRoutes = require("./routes/ads");
 const uploadRoutes = require("./routes/upload");
-const Image = require("./models/Image");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || process.env.NODE_ENV !== "production") {
-      return callback(null, true);
-    }
-    const rawOrigins = [
-      FRONTEND_URL,
-      process.env.ALLOWED_ORIGIN,
-      "http://localhost:4000",
-      "http://127.0.0.1:4000",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-    ].filter(Boolean);
-    const allowed = rawOrigins.flatMap((o) => o.split(",")).map((s) => s.trim());
-    callback(null, allowed.includes(origin));
-  },
-  credentials: true,
-}));
+// --- 1. CORS & Security Middlewares ---
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+      const rawOrigins = [
+        FRONTEND_URL,
+        process.env.ALLOWED_ORIGIN,
+        "http://localhost:4000",
+        "http://127.0.0.1:4000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+      ].filter(Boolean);
+      const allowed = rawOrigins.flatMap((o) => o.split(",")).map((s) => s.trim());
+      callback(null, allowed.includes(origin));
+    },
+    credentials: true,
+  })
+);
+
+// --- 2. Body Parsers ---
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Serve uploaded images from MongoDB if the file is not on disk.
-app.get("/uploads/:filename", async (req, res) => {
-  try {
-    const img = await Image.findOne({ filename: req.params.filename });
-    if (!img || !img.data) return res.status(404).json({ error: "Image not found" });
-    res.set("Content-Type", img.contentType || "application/octet-stream");
-    res.set("Cache-Control", "public, max-age=31536000, immutable");
-    return res.send(img.data);
-  } catch (err) {
-    return res.status(500).json({ error: "Server error" });
-  }
-});
+// --- 3. Request Logger ---
+app.use(requestLogger);
 
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
-});
+// --- 4. Static Files & Image Storage ---
+const uploadDir = path.join(__dirname, "uploads");
+app.use("/uploads", express.static(uploadDir));
 
-// Routes
+// Fallback: Stream uploaded images from MongoDB if disk cache misses
+app.get("/uploads/:filename", serveImage);
+
+// Static images from project root
+const ROOT = path.join(__dirname, "..");
+app.use("/images", express.static(path.join(ROOT, "images")));
+
+// --- 5. Mount API Routes ---
 app.use("/api/auth", authRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/categories", categoriesRoutes);
@@ -76,6 +82,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/ads", adsRoutes);
 app.use("/api/upload", uploadRoutes);
 
+// --- 6. Health Check Endpoint ---
 app.get("/api/health", async (_req, res) => {
   const dbState = mongoose.connection.readyState;
   const dbStates = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
@@ -86,11 +93,7 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
-// --- Static images (project root) ---
-const ROOT = path.join(__dirname, "..");
-app.use("/images", express.static(path.join(ROOT, "images")));
-
-// --- Serve React production build if dist exists ---
+// --- 7. Serve React Production Build (if dist exists) ---
 const FRONTEND_DIST = path.join(__dirname, "../frontend/dist");
 if (fs.existsSync(FRONTEND_DIST)) {
   app.use(express.static(FRONTEND_DIST));
@@ -102,19 +105,11 @@ if (fs.existsSync(FRONTEND_DIST)) {
   });
 }
 
-// 404 handler
-app.use((req, res) => {
-  if (req.path.startsWith("/api")) {
-    return res.status(404).json({ error: "API endpoint not found" });
-  }
-  res.status(404).json({ error: "Not found" });
-});
+// --- 8. Error Handling Middlewares ---
+app.use(notFound);
+app.use(errorHandler);
 
-app.use((err, _req, res, _next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error" });
-});
-
+// --- 9. Bootstrap & Startup Utilities ---
 async function seedInitialAdmin() {
   try {
     const bcrypt = require("bcryptjs");
@@ -130,22 +125,21 @@ async function seedInitialAdmin() {
         role: "admin",
         name: "HEXA NEWS Admin",
       });
-      console.log("Initial admin user created");
-    } else if (!userExists) {
-      console.warn("No admin user exists. Set ADMIN_INITIAL_PASSWORD to create the initial admin.");
+      console.log(" Initial admin user created");
     }
   } catch (e) {
-    console.log("Auto-seed skipped:", e.message);
+    console.log(" Auto-seed skipped:", e.message);
   }
 }
 
-// Start accepting requests immediately. MongoDB reconnects in the background,
-// which is required by Hostinger's startup health check.
+// Start HTTP server immediately (supports Hostinger & cloud health checkers)
 app.listen(PORT, () => {
-  console.log(`\n HEXA NEWS (HNN) Backend running on port ${PORT}`);
-  console.log(`   Health: /api/health\n`);
+  console.log(`\n🚀 HEXA NEWS (HNN) Enterprise Backend running on port ${PORT}`);
+  console.log(`   Architecture: Layered MVC (Models, Views/API, Controllers)`);
+  console.log(`   Health: http://localhost:${PORT}/api/health\n`);
 });
 
+// Establish database connection asynchronously
 connectDB().then((connection) => {
   if (connection) {
     seedInitialAdmin();

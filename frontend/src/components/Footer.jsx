@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Footer({ topArticles = [] }) {
   const [email, setEmail] = useState('');
@@ -141,19 +142,25 @@ export default function Footer({ topArticles = [] }) {
                 Quick Link
               </h4>
               <ul className="space-y-[12px] list-none p-0 m-0">
-                {['International News', 'Post', 'Feature', 'Contact'].map((linkName, i) => (
+                {[
+                  { name: 'About', path: '/about' },
+                  { name: 'International News', path: '/asia' },
+                  { name: 'Post', path: '/blog-standard' },
+                  { name: 'Feature', path: '/blog-masonry' },
+                  { name: 'Contact', path: '/contact' },
+                ].map((item, i) => (
                   <li key={i}>
-                    <a
-                      href={linkName === 'Contact' ? '/contact' : '#'}
+                    <Link
+                      to={item.path}
                       className="text-[14px] text-white/60 hover:text-white transition-all duration-300 flex items-center gap-[6px] group"
                     >
                       <span className="text-[#ff4c60] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
                         →
                       </span>
                       <span className="group-hover:translate-x-1 transition-transform duration-200">
-                        {linkName}
+                        {item.name}
                       </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

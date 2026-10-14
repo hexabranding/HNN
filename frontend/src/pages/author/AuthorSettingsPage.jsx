@@ -10,7 +10,6 @@ export default function AuthorSettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: activeUser?.name || '',
@@ -18,8 +17,6 @@ export default function AuthorSettingsPage() {
     role: activeUser?.role || 'Staff Reporter',
     photo: activeUser?.photo || '',
     bio: activeUser?.bio || '',
-    password: '',
-    confirmPassword: '',
   });
 
   const handlePhotoUpload = async (e) => {
@@ -59,11 +56,6 @@ export default function AuthorSettingsPage() {
       return;
     }
 
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      showToast('Passwords do not match', 'error');
-      return;
-    }
-
     setSaving(true);
     const authorId = activeUser?.id || activeUser?._id || activeUser?.name;
 
@@ -73,10 +65,6 @@ export default function AuthorSettingsPage() {
       photo: formData.photo.trim(),
       bio: formData.bio.trim(),
     };
-
-    if (formData.password.trim()) {
-      payload.password = formData.password.trim();
-    }
 
     try {
       const res = await fetch(`/api/authors/${authorId}`, {
@@ -105,7 +93,6 @@ export default function AuthorSettingsPage() {
       setActiveUser(updatedUser);
       localStorage.setItem('hexa_author_user', JSON.stringify(updatedUser));
       localStorage.setItem('hexa_user', JSON.stringify(updatedUser));
-      setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
       showToast('Author profile updated successfully!', 'success');
     } catch (err) {
       showToast(err.message, 'error');
@@ -211,11 +198,13 @@ export default function AuthorSettingsPage() {
             </label>
             <input
               type="email"
+              disabled
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="e.g. author@hexanews.in"
-              className="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:bg-white transition"
+              className="w-full px-3.5 py-2.5 bg-[#f1f5f9] border border-[#d1d5db] rounded-lg text-sm text-[#64748b] font-medium cursor-not-allowed"
             />
+            <span className="text-[10px] text-[#94a3b8] mt-1 inline-block">
+              Assigned by Hexa News Administration. Can only be modified by Admin.
+            </span>
           </div>
 
           {/* Bio */}
@@ -232,50 +221,12 @@ export default function AuthorSettingsPage() {
             />
           </div>
 
-          {/* Change Password Section */}
-          <div className="pt-6 border-t border-[#f1f5f9] space-y-4">
+          {/* Account Security Note */}
+          <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-3 text-xs text-[#64748b]">
+            <i className="bi bi-shield-lock-fill text-base text-[#c91f26]"></i>
             <div>
-              <h4 className="text-[15px] font-bold text-[#111827]">Security & Password</h4>
-              <p className="text-xs text-[#64748b]">
-                Leave blank if you do not want to change your password
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
-                  New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Enter new password"
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:bg-white transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                  >
-                    <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="Repeat new password"
-                  className="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg text-sm text-[#111827] outline-none focus:border-[#c91f26] focus:bg-white transition"
-                />
-              </div>
+              <span className="font-semibold text-[#111827]">Account Security: </span>
+              Author login credentials and password updates are managed directly by the Chief Administrator.
             </div>
           </div>
 

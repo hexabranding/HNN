@@ -10,7 +10,7 @@ const JWT_SECRET =
 /**
  * Generate a professional, signed JWT token
  * @param {Object} entity User or Author document
- * @returns {string} JWT Token valid for 7 days
+ * @returns {string} JWT Token valid for 30 days
  */
 function createToken(entity) {
   if (!JWT_SECRET) {
@@ -34,7 +34,7 @@ function createToken(entity) {
   };
 
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: "7d", // 7 days CMS session duration
+    expiresIn: "30d", // 30 days CMS session duration
     issuer: "hexa-news",
   });
 }

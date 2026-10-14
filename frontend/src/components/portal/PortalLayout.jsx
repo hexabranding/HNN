@@ -30,6 +30,7 @@ export default function PortalLayout({ portalType = 'admin' }) {
   // Login form state
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -298,19 +299,19 @@ export default function PortalLayout({ portalType = 'admin' }) {
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[linear-gradient(135deg,#111111_0%,#1a1a1a_50%,#222222_100%)]">
-        <div className="w-full max-w-[420px] bg-white rounded-2xl p-10 sm:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-[#e0e0e0]">
-          <div className="text-center mb-6">
-            <Link to="/" className="inline-block mb-3">
+        <div className="w-full max-w-[420px] bg-white rounded-2xl px-7 py-8 sm:px-9 sm:py-9 shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-[#e0e0e0]">
+          <div className="text-center mb-5">
+            <Link to="/" className="inline-block mb-2.5">
               <img
                 src="/images/logo%20hexa.png"
                 alt="HEXA NEWS"
-                className="h-12 w-auto object-contain mx-auto rounded-lg"
+                className="h-11 w-auto object-contain mx-auto rounded-lg"
               />
             </Link>
-            <h2 className="text-[22px] font-bold text-[#111111] mb-1.5 font-['Inter',sans-serif]">
+            <h2 className="text-[22px] font-bold text-[#111111] mb-1 font-['Inter',sans-serif]">
               {isAuthor ? 'Author Portal' : 'Admin Panel'}
             </h2>
-            <p className="text-[#888888] text-[13px] mb-5">
+            <p className="text-[#777777] text-[13px] mb-4">
               {isAuthor
                 ? 'Sign in to your journalist workstation'
                 : 'Sign in to manage your news portal'}
@@ -352,21 +353,19 @@ export default function PortalLayout({ portalType = 'admin' }) {
           </div>
 
           {isAuthor && (
-            <div className="p-3 mb-5 rounded-xl bg-blue-50/80 border border-blue-200/80 text-[12px] text-[#1e40af] leading-relaxed flex items-start gap-2.5">
-              <i className="bi bi-shield-lock-fill shrink-0 mt-0.5 text-[#2563eb]"></i>
-              <span>
-                <strong>Accredited Journalists:</strong> Author accounts are provisioned by the Admin. Log in using your registered email and assigned password.
-              </span>
+            <div className="px-3.5 py-2.5 mb-4 rounded-xl bg-blue-50/80 border border-blue-200/80 text-xs text-[#1e40af] flex items-center gap-2.5">
+              <i className="bi bi-info-circle-fill shrink-0 text-[#2563eb] text-sm"></i>
+              <span className="leading-snug">Author accounts are created by Admin. Use your assigned credentials.</span>
             </div>
           )}
 
           {loginError && (
-            <div className="p-3 mb-5 rounded-lg bg-red-50 border border-red-200 text-xs text-[#c91f26] font-medium text-center">
+            <div className="px-3.5 py-2.5 mb-4 rounded-lg bg-red-50 border border-red-200 text-xs text-[#c91f26] font-medium text-center">
               {loginError}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-[#555555] mb-1.5">
                 {isAuthor ? 'Author Email or Name' : 'Username or Email'}
@@ -377,7 +376,7 @@ export default function PortalLayout({ portalType = 'admin' }) {
                 value={loginUser}
                 onChange={(e) => setLoginUser(e.target.value)}
                 placeholder={isAuthor ? 'author@hexanews.in' : 'admin or admin@hexanews.in'}
-                className="w-full px-3.5 py-3 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:bg-white focus:ring-2 focus:ring-[#c91f26]/10 transition"
+                className="w-full px-3.5 py-2.5 sm:py-3 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:bg-white focus:ring-2 focus:ring-[#c91f26]/10 transition"
               />
             </div>
 
@@ -385,26 +384,37 @@ export default function PortalLayout({ portalType = 'admin' }) {
               <label className="block text-[13px] font-semibold text-[#555555] mb-1.5">
                 Password
               </label>
-              <input
-                type="password"
-                required
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="Enter password"
-                className="w-full px-3.5 py-3 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:bg-white focus:ring-2 focus:ring-[#c91f26]/10 transition"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={loginPass}
+                  onChange={(e) => setLoginPass(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-full pl-3.5 pr-10 py-2.5 sm:py-3 bg-[#f9f9f9] border border-[#dddddd] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:bg-white focus:ring-2 focus:ring-[#c91f26]/10 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-[#111111] p-1 transition cursor-pointer flex items-center justify-center"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'} text-base`}></i>
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full py-3.5 bg-[#c91f26] hover:bg-[#a8191f] text-white font-semibold text-[15px] rounded-lg shadow-md transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-3 sm:py-3.5 bg-[#c91f26] hover:bg-[#a8191f] text-white font-semibold text-sm sm:text-[15px] rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50 !mt-5 sm:!mt-6"
             >
               {loggingIn ? 'Signing In...' : isAuthor ? 'Sign In to Author Portal' : 'Sign In to Admin Panel'}
             </button>
           </form>
 
-          <div className="mt-8 pt-5 border-t border-[#f0f0f0] text-center text-xs font-medium">
+          <div className="mt-6 pt-4 border-t border-[#f0f0f0] text-center text-xs font-medium">
             <Link to="/" className="text-xs text-[#c91f26] hover:underline inline-flex items-center gap-1.5">
               <span>←</span>
               <span>Return to HEXA NEWS website</span>

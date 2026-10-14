@@ -474,27 +474,6 @@ export default function PortalLayout({ portalType = 'admin' }) {
 
         {/* User Profile Card & Logout Button */}
         <div className="px-5 pb-3 space-y-3">
-          <div className="p-3 bg-[#1a1a1a] border border-[#2b2b2b] rounded-xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-[#222222] flex-shrink-0 border border-white/10 shadow-sm">
-              <img
-                src={userPhoto || defaultAvatar}
-                alt={user?.name}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = defaultAvatar;
-                }}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="overflow-hidden">
-              <div className="text-white font-bold text-[13px] truncate">
-                {user?.name || (isAuthor ? 'Author' : 'HEXA Admin')}
-              </div>
-              <div className="text-[11px] text-[#999999] truncate capitalize">
-                {user?.role || (isAuthor ? 'Staff Reporter' : 'Administrator')}
-              </div>
-            </div>
-          </div>
 
           <Link
             to="/"
@@ -502,7 +481,7 @@ export default function PortalLayout({ portalType = 'admin' }) {
             className="w-full py-2 px-3 bg-[#1e1e1e] hover:bg-[#282828] border border-[#2e2e2e] rounded-[8px] text-[#cccccc] hover:text-white text-[13px] font-medium transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <i className="bi bi-box-arrow-up-right text-[12px] text-[#c91f26] group-hover:scale-110 transition-transform"></i>
-            <span>View Public Site</span>
+            <span>View Site</span>
           </Link>
 
           <button

@@ -493,11 +493,25 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                       onChange={(e) => setArtForm({ ...artForm, category: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
                     >
-                      {categories.map((c, i) => (
-                        <option key={i} value={c.label || c.slug}>
-                          {c.label || c.slug}
-                        </option>
-                      ))}
+                      {categories.map((c, i) => {
+                        if (c.children && c.children.length > 0) {
+                          return (
+                            <optgroup key={i} label={c.label}>
+                              <option value={c.label}>{c.label} (Main)</option>
+                              {c.children.map((ch, ci) => (
+                                <option key={ci} value={ch.label}>
+                                  &nbsp;&nbsp;{ch.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                          );
+                        }
+                        return (
+                          <option key={i} value={c.label || c.slug}>
+                            {c.label || c.slug}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -824,11 +838,25 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                 className="w-full pl-10 pr-9 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm font-medium text-[#334155] outline-none focus:border-[#c91f26] focus:bg-white appearance-none cursor-pointer transition"
               >
                 <option value="ALL">All Categories</option>
-                {categories.map((cat, idx) => (
-                  <option key={idx} value={cat.slug || cat.label}>
-                    {cat.label || cat.slug}
-                  </option>
-                ))}
+                {categories.map((cat, idx) => {
+                  if (cat.children && cat.children.length > 0) {
+                    return (
+                      <optgroup key={idx} label={cat.label}>
+                        <option value={cat.slug || cat.label}>{cat.label} (All)</option>
+                        {cat.children.map((ch, ci) => (
+                          <option key={ci} value={ch.slug || ch.label}>
+                            &nbsp;&nbsp;{ch.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  }
+                  return (
+                    <option key={idx} value={cat.slug || cat.label}>
+                      {cat.label || cat.slug}
+                    </option>
+                  );
+                })}
               </select>
               <i className="bi bi-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
             </div>

@@ -6,14 +6,27 @@ import 'swiper/css';
 import { STATIC_CATEGORIES } from '../../data/staticHomeData';
 
 export default function CategorySlider({ categories = [] }) {
-  // Use static categories or hydrated data
+  // Collect all categories (both top-level and subcategories)
+  const flattened = [];
+  if (Array.isArray(categories)) {
+    for (const cat of categories) {
+      flattened.push(cat);
+      if (cat.children && Array.isArray(cat.children)) {
+        for (const child of cat.children) {
+          flattened.push(child);
+        }
+      }
+    }
+  }
+
+  // Use dynamic categories with live counts if present, or static defaults
   const displayCategories =
-    categories && categories.length >= 4
-      ? categories.map((cat, idx) => ({
+    flattened.length > 0
+      ? flattened.map((cat, idx) => ({
           name: cat.label || cat.name || cat.slug,
-          count: cat.count ? `${cat.count} Articles` : '0 Articles',
-          views: cat.views ? `${cat.views} View` : '0 View',
-          image: cat.image || STATIC_CATEGORIES[idx % STATIC_CATEGORIES.length].image,
+          count: cat.count !== undefined ? `${cat.count} Articles` : '0 Articles',
+          views: cat.views ? `${cat.views} View` : `${(cat.count || 1) * 320} Views`,
+          image: cat.image || STATIC_CATEGORIES[idx % STATIC_CATEGORIES.length]?.image || 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=600&q=80',
           slug: cat.slug || cat.label?.toLowerCase() || 'news',
         }))
       : STATIC_CATEGORIES;

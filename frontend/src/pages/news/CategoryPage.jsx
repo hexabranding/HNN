@@ -60,7 +60,19 @@ const ENTIRE_TOPIC_CATEGORIES = [
 
 export default function CategoryPage({ category: propCategory, isRegional: propIsRegional }) {
   const params = useParams();
-  const categoryKey = (propCategory || params.category || 'sports').toLowerCase();
+
+  // If subcategory param exists (e.g. /international-news/africa or /category/sports/cricket):
+  // categoryKey is the subcategory (e.g. 'africa', 'cricket')
+  // urlParentSlug is the parent category (e.g. 'international-news', 'sports')
+  const categoryKey = (
+    params.subcategory ||
+    propCategory ||
+    params.category ||
+    params.categorySlug ||
+    'sports'
+  ).toLowerCase();
+
+  const urlParentSlug = params.subcategory ? params.category?.toLowerCase() : null;
 
   if (categoryKey === 'business') {
     return <BusinessPage />;
@@ -68,20 +80,113 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
 
   const [currentPage, setCurrentPage] = useState(1);
   const [apiArticles, setApiArticles] = useState([]);
+  const [categoryInfo, setCategoryInfo] = useState(null);
+  const [parentCategoryInfo, setParentCategoryInfo] = useState(null);
+  const [allCategories, setAllCategories] = useState([]);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
-  const fallbackData = CATEGORY_PAGES_DATA[categoryKey] || CATEGORY_PAGES_DATA['sports'];
-  const isRegional = propIsRegional || fallbackData.isRegional;
+  const hasFallback = Boolean(CATEGORY_PAGES_DATA[categoryKey]);
+  const fallbackData = CATEGORY_PAGES_DATA[categoryKey] || {};
 
+  const formattedSlug = categoryKey
+    ? categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1).replace(/-/g, ' ')
+    : 'Category';
+  const categoryLabel = categoryInfo?.label || fallbackData.breadcrumb || formattedSlug;
+
+  const isRegional =
+    propIsRegional ||
+    categoryInfo?.parent === 'international-news' ||
+    categoryInfo?.parent === 'regions' ||
+    urlParentSlug === 'international-news' ||
+    urlParentSlug === 'regions' ||
+    Boolean(fallbackData.isRegional);
+
+  const parentLabel =
+    parentCategoryInfo?.label ||
+    (isRegional ? 'International News' : null);
+
+  const parentPath = parentCategoryInfo?.slug
+    ? `/${parentCategoryInfo.slug}`
+    : isRegional
+    ? '/international-news'
+    : null;
+
+  const pageTitle = fallbackData.title || `${categoryLabel} News`;
+  const breadcrumb = fallbackData.breadcrumb || categoryLabel;
+
+  // 1. Fetch category metadata from DB to get official label & parent
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchCategoryDetails() {
+      try {
+        const catList = await fetchApi('/categories');
+        if (isMounted && Array.isArray(catList)) {
+          setAllCategories(catList);
+
+          let foundCategory = null;
+          let foundParent = null;
+
+          for (const c of catList) {
+            if (c.slug?.toLowerCase() === categoryKey || c.label?.toLowerCase() === categoryKey) {
+              foundCategory = c;
+              break;
+            }
+            if (c.children && Array.isArray(c.children)) {
+              for (const ch of c.children) {
+                if (ch.slug?.toLowerCase() === categoryKey || ch.label?.toLowerCase() === categoryKey) {
+                  foundCategory = ch;
+                  foundParent = c;
+                  break;
+                }
+              }
+            }
+            if (foundCategory) break;
+          }
+
+          // If found category has a parent slug but foundParent not set yet
+          if (foundCategory?.parent && !foundParent) {
+            foundParent = catList.find(
+              (p) => p.slug?.toLowerCase() === foundCategory.parent?.toLowerCase()
+            );
+          }
+
+          // If URL parent slug provided (e.g. /international-news/africa)
+          if (!foundParent && urlParentSlug) {
+            foundParent = catList.find(
+              (p) =>
+                p.slug?.toLowerCase() === urlParentSlug ||
+                p.label?.toLowerCase() === urlParentSlug
+            );
+          }
+
+          setCategoryInfo(foundCategory);
+          setParentCategoryInfo(foundParent);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchCategoryDetails();
+    return () => {
+      isMounted = false;
+    };
+  }, [categoryKey, urlParentSlug]);
+
+  // 2. Fetch articles for this category
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     async function loadData() {
       try {
-        const res = await fetchApi(`/news?category=${encodeURIComponent(categoryKey)}&limit=12`);
+        const queryTerm = categoryInfo?.label
+          ? `${categoryKey},${categoryInfo.label}`
+          : categoryKey;
+        const res = await fetchApi(`/news?category=${encodeURIComponent(queryTerm)}&limit=18`);
         if (res && res.news && res.news.length > 0) {
           setApiArticles(res.news);
+        } else {
+          setApiArticles([]);
         }
       } catch (err) {
         console.warn('API error, using fallback category data:', err);
@@ -89,29 +194,31 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     }
 
     loadData();
-  }, [categoryKey]);
+  }, [categoryKey, categoryInfo?.label]);
 
   // Combine dynamic articles and fallback data
   const displayedArticles =
     apiArticles.length > 0
       ? apiArticles.map((a, i) => ({
-          badge: a.category || fallbackData.articles[i % fallbackData.articles.length]?.badge || 'Sports',
-          author: a.author || fallbackData.articles[i % fallbackData.articles.length]?.author || 'Staff Writer',
+          badge: a.category || categoryLabel,
+          author: a.author || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.author || 'Staff Writer',
           date: a.date
             ? new Date(a.date).toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
               })
-            : fallbackData.articles[i % fallbackData.articles.length]?.date,
+            : 'Recent',
           views: `${a.views || '3.5k'}`,
           readTime: a.readTime || '5 min read',
           title: a.title,
-          excerpt: a.description || a.excerpt || fallbackData.articles[i % fallbackData.articles.length]?.excerpt,
-          image: a.image || fallbackData.articles[i % fallbackData.articles.length]?.image,
+          excerpt: a.description || a.excerpt || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.excerpt || (a.content ? a.content.replace(/<[^>]+>/g, '').slice(0, 130) + '...' : ''),
+          image: a.image || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80',
           slug: a.slug || `post-${i + 1}`,
         }))
-      : fallbackData.articles;
+      : hasFallback && fallbackData.articles
+      ? fallbackData.articles
+      : [];
 
   const CARDS_PER_PAGE = 10;
   const totalPages = Math.max(1, Math.ceil(displayedArticles.length / CARDS_PER_PAGE));
@@ -139,16 +246,21 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                 Home
               </Link>
               <span>/</span>
-              {isRegional && (
+              {parentLabel && (
                 <>
-                  <span className="text-gray-600">International News</span>
+                  <Link
+                    to={parentPath || '#'}
+                    className="text-gray-600 hover:text-[#ff4c60] hover:underline font-medium"
+                  >
+                    {parentLabel}
+                  </Link>
                   <span>/</span>
                 </>
               )}
-              <span className="text-gray-800 font-semibold">{fallbackData.breadcrumb}</span>
+              <span className="text-gray-800 font-semibold">{breadcrumb}</span>
             </nav>
             <h1 className="font-['Prompt',sans-serif] text-3xl sm:text-4xl font-bold text-[#111111] tracking-tight">
-              {fallbackData.title}
+              {pageTitle}
             </h1>
           </div>
         </section>
@@ -159,7 +271,26 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
               {/* Left Column: 8 cols (Blog Grid) */}
               <div className="lg:col-span-8">
-                {/* 2-Column News Cards Grid - Auto resized to content length */}
+                {paginatedArticles.length === 0 ? (
+                  <div className="py-16 px-6 text-center bg-[#fafafa] rounded-2xl border border-dashed border-[#e2e8f0]">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-red-50 text-[#c91f26] rounded-full flex items-center justify-center text-2xl">
+                      <i className="bi bi-newspaper"></i>
+                    </div>
+                    <h3 className="font-['Prompt',sans-serif] text-xl font-bold text-[#111111] mb-2">
+                      No Articles in {categoryLabel} Yet
+                    </h3>
+                    <p className="text-gray-500 max-w-md mx-auto text-sm mb-6 leading-relaxed">
+                      Stories for this category are being prepared by our editorial team. Check back soon for the latest coverage and updates.
+                    </p>
+                    <Link
+                      to="/"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition"
+                    >
+                      <i className="bi bi-arrow-left"></i>
+                      <span>Back to Home</span>
+                    </Link>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   {paginatedArticles.map((article, idx) => (
                     <article
@@ -227,17 +358,20 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                     </article>
                   ))}
                 </div>
+                )}
 
                 {/* Interactive Pagination matching HEXA NEWS standard (10 cards per page) */}
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(p) => {
-                    setCurrentPage(p);
-                    window.scrollTo({ top: 380, behavior: 'smooth' });
-                  }}
-                  className="mt-12 !justify-start"
-                />
+                {paginatedArticles.length > 0 && totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(p) => {
+                      setCurrentPage(p);
+                      window.scrollTo({ top: 380, behavior: 'smooth' });
+                    }}
+                    className="mt-12 !justify-start"
+                  />
+                )}
               </div>
 
               {/* Right Column: 4 cols (Sidebar) */}
@@ -261,7 +395,16 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {ENTIRE_TOPIC_CATEGORIES.slice(0, 4).map((cat, idx) => (
+              {(allCategories.length > 0
+                ? allCategories.slice(0, 4).map((c, i) => ({
+                    name: c.label || c.slug,
+                    articles: `${c.count || 0} Articles`,
+                    views: `${(c.count || 1) * 350} Views`,
+                    image: c.image || ENTIRE_TOPIC_CATEGORIES[i % ENTIRE_TOPIC_CATEGORIES.length]?.image || 'https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?w=600&q=80',
+                    path: `/${c.slug}`,
+                  }))
+                : ENTIRE_TOPIC_CATEGORIES.slice(0, 4)
+              ).map((cat, idx) => (
                 <div
                   key={idx}
                   className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all duration-300 group flex flex-col"

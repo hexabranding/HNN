@@ -6,8 +6,8 @@ export async function fetchApi(endpoint, options = {}) {
   const cacheKey = `hexa_cache_${endpoint}`;
   const isGet = !options.method || options.method === 'GET';
 
-  // 1. Read from localStorage cache for GET requests
-  if (isGet) {
+  // 1. Read from localStorage cache for GET requests (unless skipCache requested)
+  if (isGet && !options.skipCache) {
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -79,3 +79,23 @@ export function formatImageUrl(url) {
   if (url.startsWith('/')) return `${backendBase}${url}`;
   return `${backendBase}/${url}`;
 }
+
+export function clearApiCache(endpoint) {
+  try {
+    if (endpoint) {
+      localStorage.removeItem(`hexa_cache_${endpoint}`);
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith(`hexa_cache_${endpoint}`)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } else {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('hexa_cache_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  } catch {}
+}
+

@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchApi } from '../../services/api';
 
 export default function Footer({ topArticles = [] }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [footerCategories, setFooterCategories] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadFooterCategories() {
+      try {
+        const cats = await fetchApi('/categories');
+        if (isMounted && Array.isArray(cats) && cats.length > 0) {
+          setFooterCategories(cats.slice(0, 6));
+        }
+      } catch (_err) {}
+    }
+    loadFooterCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -142,13 +160,19 @@ export default function Footer({ topArticles = [] }) {
                 Quick Link
               </h4>
               <ul className="space-y-[12px] list-none p-0 m-0">
-                {[
-                  { name: 'About', path: '/about' },
-                  { name: 'International News', path: '/asia' },
-                  { name: 'Post', path: '/blog-standard' },
-                  { name: 'Feature', path: '/blog-masonry' },
-                  { name: 'Contact', path: '/contact' },
-                ].map((item, i) => (
+                {(footerCategories.length > 0
+                  ? footerCategories.map((c) => ({
+                      name: c.label || c.slug,
+                      path: `/${c.slug}`,
+                    }))
+                  : [
+                      { name: 'About', path: '/about' },
+                      { name: 'Business', path: '/business' },
+                      { name: 'Technology', path: '/technology' },
+                      { name: 'Sports', path: '/sports' },
+                      { name: 'Contact', path: '/contact' },
+                    ]
+                ).map((item, i) => (
                   <li key={i}>
                     <Link
                       to={item.path}

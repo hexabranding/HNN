@@ -94,15 +94,51 @@ const getNews = asyncHandler(async (req, res) => {
 
   const orGroups = [];
   if (category) {
-    const cats = String(category).split(",").map((s) => s.trim()).filter(Boolean);
+    const rawCats = String(category).split(",").map((s) => s.trim()).filter(Boolean);
     const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const allSearchTerms = new Set(rawCats);
+
+    try {
+      const slugRegexes = rawCats.map((c) => new RegExp("^" + escapeRegExp(c) + "$", "i"));
+      const matchedCats = await Category.find({
+        $or: [
+          { slug: { $in: slugRegexes } },
+          { label: { $in: slugRegexes } },
+        ],
+      }).lean();
+
+      for (const mc of matchedCats) {
+        if (mc.slug) allSearchTerms.add(mc.slug);
+        if (mc.label) allSearchTerms.add(mc.label);
+      }
+
+      if (matchedCats.length > 0) {
+        const parentSlugs = matchedCats.map((mc) => mc.slug).filter(Boolean);
+        const children = await Category.find({ parent: { $in: parentSlugs } }).lean();
+        for (const ch of children) {
+          if (ch.slug) allSearchTerms.add(ch.slug);
+          if (ch.label) allSearchTerms.add(ch.label);
+        }
+      }
+    } catch (_err) {
+      // Fallback cleanly to rawCats
+    }
+
+    const searchArr = Array.from(allSearchTerms);
     const makeRegexes = (arr) => arr.map((c) => new RegExp("^" + escapeRegExp(c) + "$", "i"));
-    if (cats.length === 1) {
-      const rx = new RegExp("^" + escapeRegExp(cats[0]) + "$", "i");
+
+    if (searchArr.length === 1) {
+      const rx = new RegExp("^" + escapeRegExp(searchArr[0]) + "$", "i");
       orGroups.push({ $or: [{ category: rx }, { categories: rx }, { categoryMl: rx }] });
-    } else if (cats.length > 1) {
-      const regexes = makeRegexes(cats);
-      orGroups.push({ $or: [{ category: { $in: regexes } }, { categories: { $in: regexes } }, { categoryMl: { $in: regexes } }] });
+    } else if (searchArr.length > 1) {
+      const regexes = makeRegexes(searchArr);
+      orGroups.push({
+        $or: [
+          { category: { $in: regexes } },
+          { categories: { $in: regexes } },
+          { categoryMl: { $in: regexes } },
+        ],
+      });
     }
   }
   if (search) {

@@ -25,21 +25,31 @@ const getCategories = asyncHandler(async (_req, res) => {
 
   const withCounts = categories.map((cat) => {
     const slugKey = (cat.slug || "").toLowerCase().trim();
+    const labelKey = (cat.label || "").toLowerCase().trim();
+    let total = countMap[slugKey] || 0;
+    if (labelKey !== slugKey && countMap[labelKey]) {
+      total += countMap[labelKey];
+    }
     return {
       ...cat,
-      count: countMap[slugKey] || 0,
+      count: total,
     };
   });
 
   const groups = withCounts.filter((c) => !c.parent);
   const children = withCounts.filter((c) => c.parent);
 
-  const hierarchical = groups.map((group) => ({
-    ...group,
-    children: children
+  const hierarchical = groups.map((group) => {
+    const groupChildren = children
       .filter((child) => child.parent === group.slug)
-      .sort((a, b) => a.slug.localeCompare(b.slug)),
-  }));
+      .sort((a, b) => a.slug.localeCompare(b.slug));
+    const childrenTotal = groupChildren.reduce((acc, ch) => acc + (ch.count || 0), 0);
+    return {
+      ...group,
+      count: (group.count || 0) + childrenTotal,
+      children: groupChildren,
+    };
+  });
 
   res.json(hierarchical);
 });
@@ -92,7 +102,7 @@ const createCategory = asyncHandler(async (req, res) => {
  */
 const updateCategory = asyncHandler(async (req, res) => {
   const oldSlug = req.params.slug;
-  const { label, titleMl, slug: requestedSlug } = req.body;
+  const { label, titleMl, slug: requestedSlug, parent } = req.body;
 
   if (!label || !label.trim()) {
     return res.status(400).json({ error: "label is required" });
@@ -113,6 +123,20 @@ const updateCategory = asyncHandler(async (req, res) => {
     if (duplicate) {
       return res.status(409).json({ error: "A category with this slug already exists" });
     }
+  }
+
+  if (parent && parent.trim() !== "") {
+    const cleanParent = parent.trim();
+    if (cleanParent === oldSlug || cleanParent === newSlug) {
+      return res.status(400).json({ error: "A category cannot be its own parent" });
+    }
+    const parentCategory = await Category.findOne({ slug: cleanParent });
+    if (!parentCategory) {
+      return res.status(400).json({ error: "Parent category not found" });
+    }
+    category.parent = cleanParent;
+  } else if (parent === null || parent === "") {
+    category.parent = null;
   }
 
   const wasGroup = !category.parent;

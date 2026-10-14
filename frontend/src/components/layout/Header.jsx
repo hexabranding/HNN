@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { fetchApi } from '../../services/api';
 
 export default function Header({ onOpenSearch }) {
   const [isSticky, setIsSticky] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
-  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [openMobileDropdowns, setOpenMobileDropdowns] = useState({});
+  const [categories, setCategories] = useState([]);
   const dropdownRef = useRef(null);
   const location = useLocation();
 
@@ -21,26 +24,54 @@ export default function Header({ onOpenSearch }) {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDesktopDropdownOpen(false);
+        setActiveDropdown(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navLinks = [
+  // Fetch dynamic categories from API
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCategories(forceSkipCache = false) {
+      try {
+        const data = await fetchApi('/categories', { skipCache: forceSkipCache });
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+        }
+      } catch (err) {
+        console.warn('Could not load categories for navbar:', err);
+      }
+    }
+    loadCategories();
+
+    const handleCategoriesUpdate = () => {
+      loadCategories(true);
+    };
+    window.addEventListener('hexa_categories_updated', handleCategoriesUpdate);
+    window.addEventListener('storage', handleCategoriesUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('hexa_categories_updated', handleCategoriesUpdate);
+      window.removeEventListener('storage', handleCategoriesUpdate);
+    };
+  }, []);
+
+  const defaultNavLinks = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     {
       name: 'International News',
       dropdown: [
-        { name: 'Asia', path: '/asia' },
-        { name: 'North America', path: '/north-america' },
-        { name: 'Antarctica', path: '/antarctica' },
-        { name: 'Europe', path: '/europe' },
-        { name: 'Australia', path: '/australia' },
-        { name: 'South America', path: '/south-america' },
-        { name: 'Africa', path: '/africa' },
+        { name: 'Africa', path: '/international-news/africa' },
+        { name: 'Antarctica', path: '/international-news/antarctica' },
+        { name: 'Asia', path: '/international-news/asia' },
+        { name: 'Australia', path: '/international-news/australia' },
+        { name: 'Europe', path: '/international-news/europe' },
+        { name: 'North America', path: '/international-news/north-america' },
+        { name: 'South America', path: '/international-news/south-america' },
       ],
     },
     { name: 'Sports', path: '/sports' },
@@ -49,6 +80,97 @@ export default function Header({ onOpenSearch }) {
     { name: 'Business', path: '/business' },
     { name: 'Contact', path: '/contact' },
   ];
+
+  const formatLabel = (label) => {
+    if (!label) return '';
+    const trimmed = label.trim();
+    if (trimmed === trimmed.toUpperCase()) {
+      return trimmed.charAt(0) + trimmed.slice(1).toLowerCase();
+    }
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  };
+
+  const navLinks = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return defaultNavLinks;
+    }
+
+    const links = [
+      { name: 'Home', path: '/' },
+      { name: 'About', path: '/about' },
+    ];
+
+    // Find international news category
+    const regionsCat = categories.find(
+      (c) =>
+        c.slug?.toLowerCase() === 'international-news' ||
+        c.slug?.toLowerCase() === 'regions' ||
+        c.label?.toLowerCase() === 'international news' ||
+        c.label?.toLowerCase() === 'regions'
+    );
+
+    const intlSlug = regionsCat?.slug || 'international-news';
+
+    const regionalDropdown =
+      regionsCat?.children && regionsCat.children.length > 0
+        ? [...regionsCat.children]
+            .sort((a, b) => (a.label || a.slug).localeCompare(b.label || b.slug))
+            .map((ch) => ({
+              name: ch.label || formatLabel(ch.slug),
+              path: `/${intlSlug}/${ch.slug || ch.id}`,
+            }))
+        : defaultNavLinks[2].dropdown;
+
+    links.push({
+      name: 'International News',
+      dropdown: regionalDropdown,
+    });
+
+    const standardPriority = ['sports', 'health', 'technology', 'business'];
+
+    const otherCats = categories.filter((c) => {
+      const slug = (c.slug || c.id || '').toLowerCase();
+      return (
+        !c.parent &&
+        slug !== 'regions' &&
+        slug !== 'international-news' &&
+        slug !== 'news'
+      );
+    });
+
+    otherCats.sort((a, b) => {
+      const slugA = (a.slug || a.id || '').toLowerCase();
+      const slugB = (b.slug || b.id || '').toLowerCase();
+      const idxA = standardPriority.indexOf(slugA);
+      const idxB = standardPriority.indexOf(slugB);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
+
+    otherCats.forEach((c) => {
+      const slug = (c.slug || c.id || '').toLowerCase();
+      const label = formatLabel(c.label || c.slug || c.id);
+      if (c.children && c.children.length > 0) {
+        links.push({
+          name: label,
+          dropdown: c.children.map((ch) => ({
+            name: ch.label || formatLabel(ch.slug),
+            path: `/${slug}/${ch.slug || ch.id}`,
+          })),
+        });
+      } else {
+        links.push({
+          name: label,
+          path: `/${slug}`,
+        });
+      }
+    });
+
+    links.push({ name: 'Contact', path: '/contact' });
+    return links;
+  }, [categories]);
 
   return (
     <>
@@ -61,7 +183,7 @@ export default function Header({ onOpenSearch }) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Left: Menu toggle button & Mobile Logo (ONLY visible on responsive / mobile screens, HIDDEN on big desktop screens) */}
+            {/* Left: Menu toggle button & Mobile Logo */}
             <div className="flex lg:hidden items-center space-x-4">
               <button
                 type="button"
@@ -85,30 +207,38 @@ export default function Header({ onOpenSearch }) {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-7">
+            {/* Desktop Navigation - All categories, Business, and Contact unpacked directly */}
+            <nav ref={dropdownRef} className="hidden lg:flex items-center space-x-5 xl:space-x-6 flex-wrap">
               {navLinks.map((item, idx) => {
                 if (item.dropdown) {
+                  const isDropdownOpen = activeDropdown === idx;
+                  const isChildActive = item.dropdown.some(
+                    (sub) => location.pathname === sub.path
+                  );
+
                   return (
                     <div
                       key={idx}
-                      ref={dropdownRef}
                       className="relative group py-2"
-                      onMouseEnter={() => setDesktopDropdownOpen(true)}
-                      onMouseLeave={() => setDesktopDropdownOpen(false)}
+                      onMouseEnter={() => setActiveDropdown(idx)}
+                      onMouseLeave={() => setActiveDropdown(null)}
                     >
                       <button
                         type="button"
-                        onClick={() => setDesktopDropdownOpen((prev) => !prev)}
+                        onClick={() =>
+                          setActiveDropdown((prev) => (prev === idx ? null : idx))
+                        }
                         className={`flex items-center gap-1.5 text-sm font-semibold tracking-wide transition py-1 cursor-pointer ${
-                          desktopDropdownOpen ? 'text-[#c91f26]' : 'text-gray-800 hover:text-[#c91f26]'
+                          isDropdownOpen || isChildActive
+                            ? 'text-[#c91f26]'
+                            : 'text-gray-800 hover:text-[#c91f26]'
                         }`}
-                        aria-expanded={desktopDropdownOpen}
+                        aria-expanded={isDropdownOpen}
                       >
                         <span>{item.name}</span>
                         <i
                           className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
-                            desktopDropdownOpen ? 'rotate-180 text-[#c91f26]' : 'group-hover:rotate-180'
+                            isDropdownOpen ? 'rotate-180 text-[#c91f26]' : 'group-hover:rotate-180'
                           }`}
                         ></i>
                       </button>
@@ -116,17 +246,17 @@ export default function Header({ onOpenSearch }) {
                       {/* Dropdown menu */}
                       <div
                         className={`absolute left-0 top-full pt-1.5 z-50 ${
-                          desktopDropdownOpen ? 'block' : 'hidden group-hover:block'
+                          isDropdownOpen ? 'block' : 'hidden group-hover:block'
                         }`}
                       >
-                        <div className="w-56 bg-white rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-gray-100 py-2.5 overflow-hidden">
+                        <div className="w-56 bg-white rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-gray-100 py-2.5 overflow-hidden max-h-[380px] overflow-y-auto">
                           {item.dropdown.map((sub, sIdx) => {
                             const isSubActive = location.pathname === sub.path;
                             return (
                               <Link
                                 key={sIdx}
                                 to={sub.path}
-                                onClick={() => setDesktopDropdownOpen(false)}
+                                onClick={() => setActiveDropdown(null)}
                                 className={`block px-5 py-2.5 text-sm font-medium transition-all ${
                                   isSubActive
                                     ? 'text-[#c91f26] bg-red-50/70 font-semibold'
@@ -209,20 +339,26 @@ export default function Header({ onOpenSearch }) {
             <nav className="mt-6 flex-1 space-y-3 overflow-y-auto">
               {navLinks.map((item, idx) => {
                 if (item.dropdown) {
+                  const isMobileOpen = Boolean(openMobileDropdowns[idx]);
                   return (
                     <div key={idx} className="py-1">
                       <button
-                        onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+                        onClick={() =>
+                          setOpenMobileDropdowns((prev) => ({
+                            ...prev,
+                            [idx]: !prev[idx],
+                          }))
+                        }
                         className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 hover:text-[#c91f26] py-1.5 cursor-pointer"
                       >
                         <span>{item.name}</span>
                         <i
                           className={`bi bi-chevron-down text-xs transition-transform ${
-                            mobileDropdownOpen ? 'rotate-180' : ''
+                            isMobileOpen ? 'rotate-180 text-[#c91f26]' : ''
                           }`}
                         ></i>
                       </button>
-                      {mobileDropdownOpen && (
+                      {isMobileOpen && (
                         <div className="pl-4 space-y-2 mt-2 border-l-2 border-red-100">
                           {item.dropdown.map((sub, sIdx) => (
                             <Link
@@ -230,9 +366,8 @@ export default function Header({ onOpenSearch }) {
                               to={sub.path}
                               onClick={() => {
                                 setMobileMenuOpen(false);
-                                setMobileDropdownOpen(false);
                               }}
-                              className="block text-xs font-medium text-gray-600 hover:text-[#c91f26]"
+                              className="block text-xs font-medium text-gray-600 hover:text-[#c91f26] py-1"
                             >
                               {sub.name}
                             </Link>

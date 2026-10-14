@@ -81,7 +81,11 @@ function App() {
               <Route path="/europe" element={<CategoryPage category="europe" isRegional={true} />} />
               <Route path="/australia" element={<CategoryPage category="australia" isRegional={true} />} />
               <Route path="/south-america" element={<CategoryPage category="south-america" isRegional={true} />} />
-              <Route path="/africa" element={<CategoryPage category="africa" isRegional={true} />} />
+              {/* Dynamic Category & Hierarchical Subcategory Pages */}
+              <Route path="/category/:category" element={<CategoryPage />} />
+              <Route path="/category/:category/:subcategory" element={<CategoryPage />} />
+              <Route path="/:category/:subcategory" element={<CategoryPage />} />
+              <Route path="/:categorySlug" element={<CategoryPage />} />
 
               {/* 404 Catch-All within MainLayout */}
               <Route path="/404" element={<NotFoundPage />} />

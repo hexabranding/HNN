@@ -1,18 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { fetchApi } from '../../services/api';
 
 export default function CategorySidebar({ activeCategory = '' }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoriesList, setCategoriesList] = useState([]);
   const navigate = useNavigate();
 
-  const categories = [
-    { name: 'Sports', path: '/sports', count: 45 },
-    { name: 'Health', path: '/health', count: 38 },
-    { name: 'Technology', path: '/technology', count: 52 },
-    { name: 'Business', path: '/business', count: 41 },
-    { name: 'Entertainment', path: '/category/entertainment', count: 29 },
-    { name: 'Lifestyle', path: '/category/lifestyle', count: 35 },
+  const fallbackCategories = [
+    { name: 'Sports', path: '/sports', count: 45, isSub: false },
+    { name: 'Health', path: '/health', count: 38, isSub: false },
+    { name: 'Technology', path: '/technology', count: 52, isSub: false },
+    { name: 'Business', path: '/business', count: 41, isSub: false },
+    { name: 'Entertainment', path: '/category/entertainment', count: 29, isSub: false },
+    { name: 'Lifestyle', path: '/category/lifestyle', count: 35, isSub: false },
   ];
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCategories() {
+      try {
+        const data = await fetchApi('/categories');
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          const list = [];
+          for (const item of data) {
+            list.push({
+              name: item.label,
+              path: `/${item.slug}`,
+              count: item.count || 0,
+              isSub: false,
+            });
+            if (item.children && Array.isArray(item.children)) {
+              for (const ch of item.children) {
+                list.push({
+                  name: ch.label,
+                  path: `/${item.slug}/${ch.slug}`,
+                  count: ch.count || 0,
+                  isSub: true,
+                });
+              }
+            }
+          }
+          setCategoriesList(list);
+        }
+      } catch (_err) {
+        // Fallback to static defaults
+      }
+    }
+    loadCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const categoriesToDisplay = categoriesList.length > 0 ? categoriesList : fallbackCategories;
 
   const popularPosts = [
     {
@@ -82,19 +123,30 @@ export default function CategorySidebar({ activeCategory = '' }) {
           Categories
         </h4>
         <ul className="divide-y divide-gray-100 list-none p-0 m-0">
-          {categories.map((cat, idx) => {
-            const isActive = activeCategory.toLowerCase() === cat.name.toLowerCase();
+          {categoriesToDisplay.map((cat, idx) => {
+            const cleanSlug = cat.path.replace(/^\//, '').toLowerCase();
+            const cleanActive = activeCategory.toLowerCase().trim();
+            const isActive =
+              cleanActive === cat.name.toLowerCase() ||
+              cleanActive === cleanSlug ||
+              cleanSlug.endsWith(`/${cleanActive}`);
+
             return (
               <li key={idx} className="group">
                 <Link
                   to={cat.path}
                   className={`flex items-center justify-between py-3 text-sm font-medium transition-all ${
+                    cat.isSub ? 'pl-3.5 text-gray-600' : 'text-gray-800'
+                  } ${
                     isActive
                       ? 'text-[#ff4c60] font-bold pl-1.5'
-                      : 'text-gray-800 hover:text-[#ff4c60] hover:pl-1.5'
+                      : 'hover:text-[#ff4c60] hover:pl-1.5'
                   }`}
                 >
-                  <span>{cat.name}</span>
+                  <span className="flex items-center gap-1.5">
+                    {cat.isSub && <span className="text-gray-300 text-xs">↳</span>}
+                    <span>{cat.name}</span>
+                  </span>
                   <span
                     className={`text-xs px-2.5 py-0.5 rounded-full transition-colors ${
                       isActive

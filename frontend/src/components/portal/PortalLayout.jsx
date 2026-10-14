@@ -65,6 +65,16 @@ export default function PortalLayout({ portalType = 'admin' }) {
         clearApiCache('/categories');
         clearApiCache('/authors');
       }
+      // Fast-track categories so category updates reflect in UI instantly without waiting on news
+      fetchApi('/categories', { skipCache: true })
+        .then((catRes) => {
+          if (Array.isArray(catRes)) {
+            setCategories(catRes);
+            setStats((prev) => ({ ...prev, categories: catRes.length }));
+          }
+        })
+        .catch(() => {});
+
       const [statsRes, artRes, catRes, authRes] = await Promise.all([
         fetchApi('/news/stats', { skipCache: true }).catch(() => null),
         fetchApi('/news?limit=200', { skipCache: true }).catch(() => null),
@@ -77,7 +87,7 @@ export default function PortalLayout({ portalType = 'admin' }) {
       const authList = Array.isArray(authRes) ? authRes : [];
 
       setArticles(newsList);
-      setCategories(catList);
+      if (catList.length > 0) setCategories(catList);
       setAuthors(authList);
 
       setStats({

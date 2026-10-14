@@ -14,7 +14,6 @@ const requestLogger = (req, res, next) => {
     console.log(`[${timestamp}] ${req.method} ${req.originalUrl} ${color}${statusCode}${reset} (${duration}ms)`);
   });
 
-  next;
   next();
 };
 

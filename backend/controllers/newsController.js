@@ -1,4 +1,6 @@
 const Article = require("../models/Article");
+const Category = require("../models/Category");
+const Author = require("../models/Author");
 const { DEFAULT_BG_COLORS } = require("../config/constants");
 const {
   slugifyEnglish,
@@ -119,15 +121,52 @@ const getNews = asyncHandler(async (req, res) => {
   }
 
   const total = await Article.countDocuments(filter);
-  const docs = await Article.find(filter)
+  let query = Article.find(filter)
     .sort({ createdAt: -1 })
     .skip((pg - 1) * lim)
-    .limit(lim)
-    .lean({ virtuals: true });
+    .limit(lim);
+
+  if (req.query.excludeContent === "true" || (req.query.full !== "true" && !isAdmin && lim > 20)) {
+    query = query.select("-content -contentMl -body");
+  }
+
+  const docs = await query.lean({ virtuals: true });
 
   const news = await withLang(docs.map((d) => ({ ...d, id: d.id || d.slug })), req, false);
 
   res.json({ news, total, page: pg, limit: lim });
+});
+
+/**
+ * @desc    Get dashboard metrics (total articles, categories, authors, views)
+ * @route   GET /api/news/stats
+ * @access  Public
+ */
+const getNewsStats = asyncHandler(async (_req, res) => {
+  const [newsStats, categoryCount, authorCount] = await Promise.all([
+    Article.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalArticles: { $sum: 1 },
+          publishedArticles: { $sum: { $cond: ["$published", 1, 0] } },
+          totalViews: { $sum: { $ifNull: ["$views", 0] } },
+        },
+      },
+    ]),
+    Category.countDocuments(),
+    Author.countDocuments(),
+  ]);
+
+  const stats = newsStats[0] || { totalArticles: 0, publishedArticles: 0, totalViews: 0 };
+
+  res.json({
+    articles: stats.totalArticles,
+    published: stats.publishedArticles,
+    categories: categoryCount,
+    authors: authorCount,
+    views: stats.totalViews,
+  });
 });
 
 /**
@@ -402,6 +441,7 @@ const migrateSlugs = asyncHandler(async (_req, res) => {
 
 module.exports = {
   getNews,
+  getNewsStats,
   getNewsBySlug,
   createNews,
   updateNews,

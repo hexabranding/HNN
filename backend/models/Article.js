@@ -44,5 +44,8 @@ articleSchema.virtual("id").get(function () {
 
 articleSchema.index({ title: "text", excerpt: "text", content: "text" });
 articleSchema.index({ createdAt: -1 });
+articleSchema.index({ published: 1, createdAt: -1 });
+articleSchema.index({ category: 1, published: 1 });
+articleSchema.index({ author: 1, published: 1 });
 
 module.exports = mongoose.model("Article", articleSchema);

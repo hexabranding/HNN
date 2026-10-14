@@ -1,5 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 1000; // 60 seconds (fast navigation while staying fresh)
 const REQUEST_TIMEOUT = 12000; // 12 seconds timeout safeguard
 
 export async function fetchApi(endpoint, options = {}) {
@@ -44,7 +44,9 @@ export async function fetchApi(endpoint, options = {}) {
       console.warn(`[Auth Interceptor] 401 Unauthorized on ${endpoint}. Clearing expired session.`);
       localStorage.removeItem('hexa_token');
       localStorage.removeItem('hexa_admin_token');
+      localStorage.removeItem('hexa_author_token');
       localStorage.removeItem('hexa_user');
+      localStorage.removeItem('hexa_author_user');
       window.dispatchEvent(new Event('hexa_auth_expired'));
     }
 

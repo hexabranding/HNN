@@ -62,14 +62,14 @@ app.use(requestLogger);
 
 // --- 4. Static Files & Image Storage ---
 const uploadDir = path.join(__dirname, "uploads");
-app.use("/uploads", express.static(uploadDir));
+app.use("/uploads", express.static(uploadDir, { maxAge: "7d", etag: true }));
 
 // Fallback: Stream uploaded images from MongoDB if disk cache misses
 app.get("/uploads/:filename", serveImage);
 
-// Static images from project root
-const ROOT = path.join(__dirname, "..");
-app.use("/images", express.static(path.join(ROOT, "images")));
+// Static images from frontend public directory
+const FRONTEND_PUBLIC_IMAGES = path.join(__dirname, "../frontend/public/images");
+app.use("/images", express.static(FRONTEND_PUBLIC_IMAGES, { maxAge: "7d", etag: true }));
 
 // --- 5. Mount API Routes ---
 app.use("/api/auth", authRoutes);

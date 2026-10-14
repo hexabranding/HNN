@@ -16,7 +16,18 @@ const BusinessPage = lazy(() => import('./pages/news/BusinessPage'));
 const BlogStandardPage = lazy(() => import('./pages/blog/BlogStandardPage'));
 const BlogClassicPage = lazy(() => import('./pages/blog/BlogClassicPage'));
 const BlogMasonryPage = lazy(() => import('./pages/blog/BlogMasonryPage'));
-const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminNewsPage = lazy(() => import('./pages/admin/AdminNewsPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminAuthorsPage = lazy(() => import('./pages/admin/AdminAuthorsPage'));
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
+
+// Author Portal Pages
+const AuthorLayout = lazy(() => import('./pages/author/AuthorLayout'));
+const AuthorDashboardPage = lazy(() => import('./pages/author/AuthorDashboardPage'));
+const AuthorNewsPage = lazy(() => import('./pages/author/AuthorNewsPage'));
+const AuthorSettingsPage = lazy(() => import('./pages/author/AuthorSettingsPage'));
 
 function App() {
   const [initialLoading, setInitialLoading] = useState(true);
@@ -77,8 +88,31 @@ function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Route>
 
-            {/* 2. Isolated Administrative Dashboard (No MainLayout header/footer) */}
-            <Route path="/admin" element={<AdminPage />} />
+            {/* 2. Isolated Administrative Dashboard (Dedicated Sub-Routes) */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="news" element={<AdminNewsPage />} />
+              <Route path="news/new" element={<AdminNewsPage defaultEditor={true} />} />
+              <Route path="news/edit/:id" element={<AdminNewsPage defaultEditor={true} />} />
+              <Route path="articles" element={<AdminNewsPage />} />
+              <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="category" element={<AdminCategoriesPage />} />
+              <Route path="catageory" element={<AdminCategoriesPage />} />
+              <Route path="authors" element={<AdminAuthorsPage />} />
+              <Route path="author" element={<AdminAuthorsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="*" element={<AdminDashboardPage />} />
+            </Route>
+
+            {/* 3. Isolated Journalist / Author Workstation */}
+            <Route path="/author-dashboard" element={<AuthorLayout />}>
+              <Route index element={<AuthorDashboardPage />} />
+              <Route path="news" element={<AuthorNewsPage />} />
+              <Route path="news/new" element={<AuthorNewsPage defaultEditor={true} />} />
+              <Route path="news/edit/:id" element={<AuthorNewsPage defaultEditor={true} />} />
+              <Route path="settings" element={<AuthorSettingsPage />} />
+              <Route path="*" element={<AuthorDashboardPage />} />
+            </Route>
           </Routes>
         </Suspense>
       </BrowserRouter>

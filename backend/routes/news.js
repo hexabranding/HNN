@@ -2,6 +2,7 @@ const express = require("express");
 const { authMiddleware } = require("../middleware/auth");
 const {
   getNews,
+  getNewsStats,
   getNewsBySlug,
   createNews,
   updateNews,
@@ -14,6 +15,7 @@ const {
 
 const router = express.Router();
 
+router.get("/stats", getNewsStats);
 router.get("/", getNews);
 router.get("/slug/:slug", getNewsBySlug);
 router.get("/:slug", getNewsBySlug);

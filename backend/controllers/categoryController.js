@@ -8,17 +8,28 @@ const asyncHandler = require("../utils/asyncHandler");
  * @access  Public
  */
 const getCategories = asyncHandler(async (_req, res) => {
-  const categories = await Category.find().sort({ slug: 1 }).lean();
+  const [categories, articleCounts] = await Promise.all([
+    Category.find().sort({ slug: 1 }).lean(),
+    Article.aggregate([
+      { $match: { published: true } },
+      { $group: { _id: { $toLower: "$category" }, count: { $sum: 1 } } },
+    ]),
+  ]);
 
-  const withCounts = await Promise.all(
-    categories.map(async (cat) => ({
+  const countMap = {};
+  for (const item of articleCounts) {
+    if (item._id) {
+      countMap[String(item._id).toLowerCase().trim()] = item.count;
+    }
+  }
+
+  const withCounts = categories.map((cat) => {
+    const slugKey = (cat.slug || "").toLowerCase().trim();
+    return {
       ...cat,
-      count: await Article.countDocuments({
-        category: cat.slug,
-        published: true,
-      }),
-    }))
-  );
+      count: countMap[slugKey] || 0,
+    };
+  });
 
   const groups = withCounts.filter((c) => !c.parent);
   const children = withCounts.filter((c) => c.parent);

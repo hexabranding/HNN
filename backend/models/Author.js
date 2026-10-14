@@ -8,6 +8,7 @@ const authorSchema = new mongoose.Schema({
   bio: { type: String, default: "" },
   photo: { type: String, default: "" },
   email: { type: String, default: "" },
+  password: { type: String, default: "" },
   count: { type: Number, default: 0 },
 }, { timestamps: true });
 

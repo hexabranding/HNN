@@ -13,7 +13,7 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="py-16 bg-white">
+    <section className="pt-5 pb-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] p-8 sm:p-14 text-center shadow-2xl">
           {/* Radial decorative light elements */}

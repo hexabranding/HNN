@@ -6,7 +6,7 @@ export default function VideoPostSection() {
   const data = STATIC_VIDEO_DATA;
 
   return (
-    <section className="video-blog pt-8 pb-[60px] bg-white">
+    <section className="video-blog pt-8 pb-4 bg-white">
       <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header: Exact match to HTML and user screenshot */}
         <div className="section-title-1 mb-[36px] text-center">

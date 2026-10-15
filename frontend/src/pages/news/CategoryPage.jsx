@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import BusinessPage from './BusinessPage';
 import { CATEGORY_PAGES_DATA } from '../../data/categoryData';
@@ -78,7 +78,16 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     return <BusinessPage />;
   }
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const sortFromUrl = searchParams.get('sort') || 'newest';
+
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const [sortBy, setSortBy] = useState(sortFromUrl);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingArticles, setLoadingArticles] = useState(true);
+
   const [apiArticles, setApiArticles] = useState([]);
   const [categoryInfo, setCategoryInfo] = useState(null);
   const [parentCategoryInfo, setParentCategoryInfo] = useState(null);
@@ -115,6 +124,14 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
   const pageTitle = fallbackData.title || `${categoryLabel} News`;
   const breadcrumb = fallbackData.breadcrumb || categoryLabel;
 
+  // Sync state if URL query params change (e.g. browser back/forward buttons)
+  useEffect(() => {
+    const p = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const s = searchParams.get('sort') || 'newest';
+    if (p !== currentPage) setCurrentPage(p);
+    if (s !== sortBy) setSortBy(s);
+  }, [searchParams]);
+
   // 1. Fetch category metadata from DB to get official label & parent
   useEffect(() => {
     let isMounted = true;
@@ -144,14 +161,12 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
             if (foundCategory) break;
           }
 
-          // If found category has a parent slug but foundParent not set yet
           if (foundCategory?.parent && !foundParent) {
             foundParent = catList.find(
               (p) => p.slug?.toLowerCase() === foundCategory.parent?.toLowerCase()
             );
           }
 
-          // If URL parent slug provided (e.g. /international-news/africa)
           if (!foundParent && urlParentSlug) {
             foundParent = catList.find(
               (p) =>
@@ -173,59 +188,108 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     };
   }, [categoryKey, urlParentSlug]);
 
-  // 2. Fetch articles for this category
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const CARDS_PER_PAGE = 10;
 
+  // 2. Fetch articles from Backend with server-side pagination & sorting
+  useEffect(() => {
+    let isMounted = true;
     async function loadData() {
+      setLoadingArticles(true);
       try {
         const queryTerm = categoryInfo?.label
           ? `${categoryKey},${categoryInfo.label}`
           : categoryKey;
-        const res = await fetchApi(`/news?category=${encodeURIComponent(queryTerm)}&limit=18`);
-        if (res && res.news && res.news.length > 0) {
-          setApiArticles(res.news);
-        } else {
-          setApiArticles([]);
+        const res = await fetchApi(
+          `/news?category=${encodeURIComponent(queryTerm)}&page=${currentPage}&limit=${CARDS_PER_PAGE}&sort=${encodeURIComponent(sortBy)}`,
+          { skipCache: true }
+        );
+        if (isMounted) {
+          if (res && res.news && Array.isArray(res.news) && res.news.length > 0) {
+            setApiArticles(res.news);
+            setTotalCount(res.total || res.news.length);
+            setTotalPages(res.totalPages || Math.max(1, Math.ceil((res.total || res.news.length) / CARDS_PER_PAGE)));
+          } else {
+            setApiArticles([]);
+            setTotalCount(0);
+            setTotalPages(1);
+          }
         }
       } catch (err) {
         console.warn('API error, using fallback category data:', err);
+        if (isMounted) {
+          setApiArticles([]);
+          setTotalCount(0);
+          setTotalPages(1);
+        }
+      } finally {
+        if (isMounted) setLoadingArticles(false);
       }
     }
 
     loadData();
-  }, [categoryKey, categoryInfo?.label]);
+    return () => {
+      isMounted = false;
+    };
+  }, [categoryKey, categoryInfo?.label, currentPage, sortBy]);
 
-  // Combine dynamic articles and fallback data
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', newPage.toString());
+    if (sortBy && sortBy !== 'newest') {
+      nextParams.set('sort', sortBy);
+    }
+    setSearchParams(nextParams);
+    window.scrollTo({ top: 380, behavior: 'smooth' });
+  };
+
+  const handleSortChange = (e) => {
+    const newSort = e.target.value;
+    setSortBy(newSort);
+    setCurrentPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', '1');
+    if (newSort === 'newest') {
+      nextParams.delete('sort');
+    } else {
+      nextParams.set('sort', newSort);
+    }
+    setSearchParams(nextParams);
+  };
+
+  // Combine dynamic articles or fallback data
+  const isUsingFallback = apiArticles.length === 0 && hasFallback && fallbackData.articles;
   const displayedArticles =
     apiArticles.length > 0
       ? apiArticles.map((a, i) => ({
           badge: a.category || categoryLabel,
-          author: a.author || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.author || 'Staff Writer',
+          author: a.author || 'Staff Writer',
           date: a.date
             ? new Date(a.date).toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
               })
+            : a.createdAt
+            ? new Date(a.createdAt).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })
             : 'Recent',
-          views: `${a.views || '3.5k'}`,
+          views: `${a.views || '0'} views`,
           readTime: a.readTime || '5 min read',
           title: a.title,
-          excerpt: a.description || a.excerpt || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.excerpt || (a.content ? a.content.replace(/<[^>]+>/g, '').slice(0, 130) + '...' : ''),
-          image: a.image || fallbackData.articles?.[i % (fallbackData.articles?.length || 1)]?.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80',
+          excerpt: a.description || a.excerpt || (a.content ? a.content.replace(/<[^>]+>/g, '').slice(0, 130) + '...' : ''),
+          image: a.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80',
           slug: a.slug || `post-${i + 1}`,
         }))
-      : hasFallback && fallbackData.articles
-      ? fallbackData.articles
+      : isUsingFallback
+      ? fallbackData.articles.slice((currentPage - 1) * CARDS_PER_PAGE, currentPage * CARDS_PER_PAGE)
       : [];
 
-  const CARDS_PER_PAGE = 10;
-  const totalPages = Math.max(1, Math.ceil(displayedArticles.length / CARDS_PER_PAGE));
-  const paginatedArticles = displayedArticles.slice(
-    (currentPage - 1) * CARDS_PER_PAGE,
-    currentPage * CARDS_PER_PAGE
-  );
+  const effectiveTotalCount = isUsingFallback ? (fallbackData.articles?.length || 0) : totalCount;
+  const effectiveTotalPages = isUsingFallback ? Math.max(1, Math.ceil(effectiveTotalCount / CARDS_PER_PAGE)) : totalPages;
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
@@ -271,7 +335,40 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
               {/* Left Column: 8 cols (Blog Grid) */}
               <div className="lg:col-span-8">
-                {paginatedArticles.length === 0 ? (
+                {/* Professional Filter & Sort Toolbar */}
+                <div className="mb-6 pb-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="text-sm text-gray-500 font-medium">
+                    Showing <span className="text-gray-900 font-semibold">{effectiveTotalCount > 0 ? (currentPage - 1) * CARDS_PER_PAGE + 1 : 0}</span>–
+                    <span className="text-gray-900 font-semibold">{Math.min(currentPage * CARDS_PER_PAGE, effectiveTotalCount)}</span> of{' '}
+                    <span className="text-gray-900 font-bold">{effectiveTotalCount}</span> stories
+                  </div>
+
+                  <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                    <label htmlFor="sortSelect" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
+                      <i className="bi bi-sort-down text-sm text-[#ff4c60]"></i>
+                      Sort by:
+                    </label>
+                    <select
+                      id="sortSelect"
+                      value={sortBy}
+                      onChange={handleSortChange}
+                      className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="popular">Most Popular / Viewed</option>
+                      <option value="likes">Most Liked</option>
+                      <option value="comments">Most Commented</option>
+                      <option value="oldest">Oldest First</option>
+                    </select>
+                  </div>
+                </div>
+
+                {loadingArticles ? (
+                  <div className="py-20 text-center">
+                    <div className="inline-block w-8 h-8 border-3 border-[#ff4c60] border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p className="text-sm text-gray-500 font-medium">Loading stories...</p>
+                  </div>
+                ) : displayedArticles.length === 0 ? (
                   <div className="py-16 px-6 text-center bg-[#fafafa] rounded-2xl border border-dashed border-[#e2e8f0]">
                     <div className="w-16 h-16 mx-auto mb-4 bg-red-50 text-[#c91f26] rounded-full flex items-center justify-center text-2xl">
                       <i className="bi bi-newspaper"></i>
@@ -292,7 +389,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                   </div>
                 ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  {paginatedArticles.map((article, idx) => (
+                  {displayedArticles.map((article, idx) => (
                     <article
                       key={idx}
                       className="border border-[#eeeeee] rounded-[10px] overflow-hidden bg-white hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300 group h-fit self-start"
@@ -360,15 +457,12 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                 </div>
                 )}
 
-                {/* Interactive Pagination matching HEXA NEWS standard (10 cards per page) */}
-                {paginatedArticles.length > 0 && totalPages > 1 && (
+                {/* Server-Side Pagination matching HEXA NEWS standard (10 cards per page) */}
+                {displayedArticles.length > 0 && effectiveTotalPages > 1 && (
                   <Pagination
                     currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={(p) => {
-                      setCurrentPage(p);
-                      window.scrollTo({ top: 380, behavior: 'smooth' });
-                    }}
+                    totalPages={effectiveTotalPages}
+                    onPageChange={handlePageChange}
                     className="mt-12 !justify-start"
                   />
                 )}

@@ -80,22 +80,26 @@ function sanitizeGallery(input) {
  * @access  Public
  */
 const getNews = asyncHandler(async (req, res) => {
-  const { category, subcategory, featured, breaking, limit = 50, page = 1, search } = req.query;
+  const { category, subcategory, featured, breaking, limit = 50, page = 1, search, sort, author, tag } = req.query;
   const isAdmin = req.headers.authorization?.startsWith("Bearer ");
   const maxLimit = isAdmin ? 2000 : 1000;
   const lim = Math.min(Math.max(parseInt(limit, 10) || 50, 1), maxLimit);
   const pg = Math.max(parseInt(page, 10) || 1, 1);
 
+  const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   const filter = {};
   if (subcategory) filter.subcategory = subcategory;
   if (featured !== undefined) filter.featured = featured === "true";
   if (breaking !== undefined) filter.breaking = breaking === "true";
+  if (author) {
+    filter.author = { $regex: new RegExp("^" + escapeRegExp(author.trim()) + "$", "i") };
+  }
   if (!isAdmin) filter.published = true;
 
   const orGroups = [];
   if (category) {
     const rawCats = String(category).split(",").map((s) => s.trim()).filter(Boolean);
-    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const allSearchTerms = new Set(rawCats);
 
     try {
@@ -141,6 +145,14 @@ const getNews = asyncHandler(async (req, res) => {
       });
     }
   }
+  if (tag) {
+    const cleanTag = escapeRegExp(tag.trim());
+    orGroups.push({
+      $or: [
+        { tags: { $regex: cleanTag, $options: "i" } },
+      ],
+    });
+  }
   if (search) {
     orGroups.push({
       $or: [
@@ -156,9 +168,44 @@ const getNews = asyncHandler(async (req, res) => {
     filter.$and = orGroups;
   }
 
+  // Server-Side Dynamic Sorting
+  let sortOption = { createdAt: -1 };
+  if (sort) {
+    switch (String(sort).toLowerCase().trim()) {
+      case "oldest":
+      case "date_asc":
+        sortOption = { createdAt: 1 };
+        break;
+      case "popular":
+      case "views":
+      case "views_desc":
+        sortOption = { views: -1, createdAt: -1 };
+        break;
+      case "likes":
+      case "likes_desc":
+        sortOption = { likes: -1, createdAt: -1 };
+        break;
+      case "comments":
+      case "comments_desc":
+        sortOption = { comments: -1, createdAt: -1 };
+        break;
+      case "title_asc":
+        sortOption = { title: 1 };
+        break;
+      case "title_desc":
+        sortOption = { title: -1 };
+        break;
+      case "newest":
+      case "date_desc":
+      default:
+        sortOption = { createdAt: -1 };
+        break;
+    }
+  }
+
   const total = await Article.countDocuments(filter);
   let query = Article.find(filter)
-    .sort({ createdAt: -1 })
+    .sort(sortOption)
     .skip((pg - 1) * lim)
     .limit(lim);
 
@@ -169,8 +216,9 @@ const getNews = asyncHandler(async (req, res) => {
   const docs = await query.lean({ virtuals: true });
 
   const news = await withLang(docs.map((d) => ({ ...d, id: d.id || d.slug })), req, false);
+  const totalPages = Math.max(1, Math.ceil(total / lim));
 
-  res.json({ news, total, page: pg, limit: lim });
+  res.json({ news, total, page: pg, limit: lim, totalPages });
 });
 
 /**

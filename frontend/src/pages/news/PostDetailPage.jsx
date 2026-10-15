@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import { fetchApi, formatImageUrl } from '../../services/api';
@@ -71,6 +71,86 @@ export default function PostDetailPage() {
   const themeColor = current.backgroundColor || '#c91f26';
   const featuredImg = formatImageUrl(current.image || defaultArticle.image);
 
+  const [stickyStyles, setStickyStyles] = useState({
+    article: {},
+    sidebar: {},
+  });
+
+  const articleRef = useRef(null);
+  const sidebarRef = useRef(null);
+
+  useEffect(() => {
+    const updateSticky = () => {
+      if (typeof window === 'undefined') return;
+
+      // On mobile / tablet (< 1024px), columns stack vertically, so disable sticky
+      if (window.innerWidth < 1024) {
+        setStickyStyles({ article: {}, sidebar: {} });
+        return;
+      }
+
+      if (!articleRef.current || !sidebarRef.current) return;
+
+      const articleH = articleRef.current.offsetHeight;
+      const sidebarH = sidebarRef.current.offsetHeight;
+      const winH = window.innerHeight;
+
+      // 1. If Sidebar is taller than Article by more than 40px:
+      if (sidebarH > articleH + 40) {
+        // Left article sticks while scrolling down
+        // If article fits in screen, stick at 96px from top (below navbar)
+        // If article is taller than screen, stick so bottom is visible at winH - articleH - 32px
+        const offsetTop = winH > articleH + 110 ? 96 : winH - articleH - 32;
+
+        setStickyStyles({
+          article: {
+            position: 'sticky',
+            top: `${offsetTop}px`,
+          },
+          sidebar: {},
+        });
+      }
+      // 2. If Article is taller than Sidebar by more than 40px:
+      else if (articleH > sidebarH + 40) {
+        // Right sidebar sticks while scrolling down
+        const offsetTop = winH > sidebarH + 110 ? 96 : winH - sidebarH - 32;
+
+        setStickyStyles({
+          article: {},
+          sidebar: {
+            position: 'sticky',
+            top: `${offsetTop}px`,
+          },
+        });
+      } else {
+        setStickyStyles({ article: {}, sidebar: {} });
+      }
+    };
+
+    updateSticky();
+
+    let observer;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        updateSticky();
+      });
+      if (articleRef.current) observer.observe(articleRef.current);
+      if (sidebarRef.current) observer.observe(sidebarRef.current);
+    }
+
+    window.addEventListener('resize', updateSticky);
+
+    const timer1 = setTimeout(updateSticky, 300);
+    const timer2 = setTimeout(updateSticky, 1000);
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', updateSticky);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [current, featuredImg]);
+
   return (
     <div className="w-full bg-[#fdfbf7]/30 min-h-screen py-6 sm:py-8">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,10 +171,14 @@ export default function PostDetailPage() {
         </div>
 
         {/* 2. Main Article Content & Sidebar Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative">
           {/* Article Column (8 cols) */}
           <div className="lg:col-span-8">
-            <article className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg">
+            <article
+              ref={articleRef}
+              style={stickyStyles.article}
+              className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg"
+            >
               {/* Post Meta Info (Author, Date, Views, Read Time) */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 pb-5 mb-8 border-b border-gray-200">
                 <span className="flex items-center gap-2">
@@ -283,8 +367,10 @@ export default function PostDetailPage() {
 
               {/* Sidebar Column (4 cols) */}
               <div className="lg:col-span-4">
-                <CategorySidebar activeCategory={current.category || 'Sports'} />
-            </div>
+                <div ref={sidebarRef} style={stickyStyles.sidebar}>
+                  <CategorySidebar activeCategory={current.category || 'Sports'} />
+                </div>
+              </div>
         </div>
       </div>
     </div>

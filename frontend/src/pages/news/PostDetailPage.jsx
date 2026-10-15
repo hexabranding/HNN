@@ -47,12 +47,26 @@ export default function PostDetailPage() {
           setArticle(data);
           // Increment view count in backend
           fetchApi(`/news/${activeSlug}/view`, { method: 'PATCH' }).catch(() => {});
-          // Load related
-          if (data.category) {
-            const relRes = await fetchApi(`/news?category=${encodeURIComponent(data.category)}&limit=4`);
-            if (relRes && relRes.news) {
-              setRelated(relRes.news.filter((a) => a.slug !== activeSlug).slice(0, 2));
+          // Load related stories (up to 3)
+          try {
+            const cat = data.category || '';
+            const relRes = await fetchApi(`/news?category=${encodeURIComponent(cat)}&limit=6`);
+            let relList = [];
+            if (relRes && Array.isArray(relRes.news)) {
+              relList = relRes.news.filter((a) => a.slug !== activeSlug);
             }
+            if (relList.length < 3) {
+              const latestRes = await fetchApi('/news?limit=6');
+              if (latestRes && Array.isArray(latestRes.news)) {
+                const extras = latestRes.news.filter(
+                  (a) => a.slug !== activeSlug && !relList.some((r) => r.slug === a.slug)
+                );
+                relList = [...relList, ...extras];
+              }
+            }
+            setRelated(relList.slice(0, 3));
+          } catch (_e) {
+            setRelated([]);
           }
         } else {
           setArticle(defaultArticle);
@@ -70,6 +84,43 @@ export default function PostDetailPage() {
   const current = article || defaultArticle;
   const themeColor = current.backgroundColor || '#c91f26';
   const featuredImg = formatImageUrl(current.image || defaultArticle.image);
+
+  const defaultRelatedStories = [
+    {
+      title: 'Comments against the Prophet; Death sentence of Sri Lankan national commuted',
+      category: current.category || 'Saudi Arabia',
+      date: 'October 15, 2026',
+      readTime: '3 min read',
+      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80',
+      lead: "Sri Lanka's Foreign Ministry said in a statement that the Saudi Supreme Court had overturned the death sentence on October 13.",
+      slug: 'sri-lankan-national-sentence-commuted',
+    },
+    {
+      title: 'The news that Riyadh is canceling season events is fake; There is no official confirmation',
+      category: current.category || 'Saudi Arabia',
+      date: 'October 15, 2026',
+      readTime: '3 min read',
+      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
+      lead: 'Authorities have clarified that the news, which is being widely circulated on social media, is fake.',
+      slug: 'riyadh-season-events-confirmation',
+    },
+    {
+      title: 'Houthi missile attack on Riyadh; The Air Defense Force destroyed it',
+      category: current.category || 'Saudi Arabia',
+      date: 'October 14, 2026',
+      readTime: '3 min read',
+      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=600&q=80',
+      lead: 'The missile was successfully intercepted and destroyed using state-of-the-art defence systems before reaching the target.',
+      slug: 'air-defense-intercepts-target',
+    },
+  ];
+
+  const displayRelated =
+    related && related.length >= 3
+      ? related.slice(0, 3)
+      : related && related.length > 0
+      ? [...related, ...defaultRelatedStories].slice(0, 3)
+      : defaultRelatedStories;
 
   const [stickyStyles, setStickyStyles] = useState({
     article: {},
@@ -360,6 +411,100 @@ export default function PostDetailPage() {
                         <a href="#" className="hover:text-gray-900"><i className="bi bi-linkedin"></i></a>
                         <a href="#" className="hover:text-gray-900"><i className="bi bi-envelope"></i></a>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Read More (Related Stories) 3-Card Section */}
+                  <div className="mt-12 pt-8 border-t border-gray-200">
+                    <div className="flex items-center gap-2.5 mb-6">
+                      <span
+                        className="w-1.5 h-6 rounded-full block"
+                        style={{ backgroundColor: themeColor }}
+                      ></span>
+                      <h3 className="font-['Prompt',sans-serif] text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                        Read more{' '}
+                        <span className="text-gray-500 font-normal text-base sm:text-lg">
+                          (Related Stories)
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
+                      {displayRelated.map((item, idx) => {
+                        const itemImg = formatImageUrl(
+                          item.image || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80'
+                        );
+                        const itemCategory = item.category || current.category || 'News';
+                        const itemExcerpt =
+                          item.lead ||
+                          item.excerpt ||
+                          (item.paragraphs && item.paragraphs[0]) ||
+                          '';
+
+                        return (
+                          <Link
+                            key={idx}
+                            to={`/post-detail?slug=${encodeURIComponent(item.slug || '')}`}
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="group rounded-xl overflow-hidden bg-white border border-gray-200/90 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1"
+                          >
+                            {/* Card Image with Category Badge */}
+                            <div className="aspect-[4/3] min-h-[170px] sm:min-h-[185px] overflow-hidden relative bg-gray-100">
+                              <img
+                                src={itemImg}
+                                alt={item.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 block"
+                                loading="lazy"
+                              />
+                              <span
+                                style={{ backgroundColor: themeColor }}
+                                className="absolute bottom-3 left-3 px-3 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider text-white shadow-sm"
+                              >
+                                {itemCategory}
+                              </span>
+                            </div>
+
+                            {/* Card Details */}
+                            <div className="p-4.5 sm:p-5 flex flex-col flex-1">
+                              {/* Metadata */}
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2.5">
+                                <span className="flex items-center gap-1">
+                                  <i
+                                    className="bi bi-calendar3 text-[11px]"
+                                    style={{ color: themeColor }}
+                                  ></i>
+                                  <span>
+                                    {item.date
+                                      ? new Date(item.date).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })
+                                      : 'Recently'}
+                                  </span>
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <i className="bi bi-clock text-[11px]"></i>
+                                  <span>{item.readTime || '3 min'}</span>
+                                </span>
+                              </div>
+
+                              {/* Title */}
+                              <h4 className="font-['Prompt',sans-serif] text-base sm:text-[17px] font-bold text-gray-900 group-hover:text-[#c91f26] transition-colors line-clamp-2 leading-snug mb-2.5">
+                                {item.title}
+                              </h4>
+
+                              {/* Lead / Excerpt */}
+                              {itemExcerpt && (
+                                <p className="text-[13px] sm:text-sm text-gray-600 line-clamp-3 leading-relaxed mt-auto">
+                                  {itemExcerpt}
+                                </p>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 </article>

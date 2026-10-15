@@ -183,12 +183,12 @@ export default function Header({ onOpenSearch }) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Left: Menu toggle button & Mobile Logo */}
-            <div className="flex lg:hidden items-center space-x-4">
+            {/* Left: Menu toggle button & Mobile Logo (with desktop balancing spacer) */}
+            <div className="flex items-center space-x-4 lg:w-9">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex flex-col justify-center items-center w-7 h-7 gap-1 focus:outline-none group cursor-pointer"
+                className="flex lg:hidden flex-col justify-center items-center w-7 h-7 gap-1 focus:outline-none group cursor-pointer"
                 aria-label="Open sidebar menu"
               >
                 <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
@@ -196,7 +196,7 @@ export default function Header({ onOpenSearch }) {
                 <span className="w-5 h-[2px] bg-[#c91f26] rounded transition group-hover:bg-[#a8191f]"></span>
               </button>
 
-              <div>
+              <div className="lg:hidden">
                 <Link to="/" className="inline-block">
                   <img
                     src="/images/logo%20hexa.png"
@@ -207,8 +207,11 @@ export default function Header({ onOpenSearch }) {
               </div>
             </div>
 
-            {/* Desktop Navigation - All categories, Business, and Contact unpacked directly */}
-            <nav ref={dropdownRef} className="hidden lg:flex items-center space-x-5 xl:space-x-6 flex-wrap">
+            {/* Desktop Navigation - Centralized */}
+            <nav
+              ref={dropdownRef}
+              className="hidden lg:flex items-center justify-center flex-1 space-x-5 xl:space-x-6 flex-wrap"
+            >
               {navLinks.map((item, idx) => {
                 if (item.dropdown) {
                   const isDropdownOpen = activeDropdown === idx;
@@ -290,7 +293,7 @@ export default function Header({ onOpenSearch }) {
             </nav>
 
             {/* Header Right Actions */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-end space-x-3 lg:w-9">
               <button
                 type="button"
                 onClick={onOpenSearch}
@@ -299,14 +302,6 @@ export default function Header({ onOpenSearch }) {
               >
                 <i className="bi bi-search text-sm"></i>
               </button>
-
-              <a
-                href="/admin"
-                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-[#c91f26] hover:text-white text-gray-700 flex items-center justify-center transition-all duration-200"
-                title="Admin Dashboard"
-              >
-                <i className="bi bi-person text-base"></i>
-              </a>
             </div>
           </div>
         </div>
@@ -391,14 +386,7 @@ export default function Header({ onOpenSearch }) {
               })}
             </nav>
 
-            <div className="pt-6 border-t border-gray-100">
-              <a
-                href="/admin"
-                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#c91f26] text-white text-xs font-bold uppercase rounded-md hover:bg-[#a8191f] transition"
-              >
-                <i className="bi bi-person"></i> Admin Portal
-              </a>
-            </div>
+
           </div>
         </div>
       )}

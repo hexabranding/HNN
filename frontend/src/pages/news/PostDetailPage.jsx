@@ -72,71 +72,67 @@ export default function PostDetailPage() {
   const featuredImg = formatImageUrl(current.image || defaultArticle.image);
 
   return (
-    <div className="w-full bg-[#fdfbf7]/30 min-h-screen">
-      {/* 1. Clean Featured Image Container (Without text overlay) */}
-      {featuredImg && (
-        <section className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
-          <div className="w-full max-h-[500px] sm:max-h-[580px] rounded-2xl overflow-hidden shadow-sm bg-gray-100 border border-gray-200/80">
-            <img
-              src={featuredImg}
-              alt={current.title}
-              className="w-full h-full max-h-[500px] sm:max-h-[580px] object-cover block"
-            />
+    <div className="w-full bg-[#fdfbf7]/30 min-h-screen py-6 sm:py-8">
+      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 1. Main Headline Title Banner on Top */}
+        <div
+          style={{ backgroundColor: themeColor }}
+          className="p-6 sm:p-8 lg:p-10 rounded-2xl text-white shadow-md mb-8 relative overflow-hidden transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-3.5">
+            <span className="inline-block px-3.5 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold uppercase rounded-md tracking-wider border border-white/25 font-['Prompt',sans-serif]">
+              {current.category || current.badge || 'News'}
+            </span>
           </div>
-        </section>
-      )}
 
-      {/* 2. Main Article Content Area (All text items & content arranged cleanly below the image) */}
-      <section className="py-8 sm:py-12 bg-white mt-4 sm:mt-6 border-t border-gray-100">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* Article Column (8 cols) */}
-            <div className="lg:col-span-8">
-              <article className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg">
-                
-                {/* Main Headline Title Banner with custom backgroundColor */}
-                <div
-                  style={{ backgroundColor: themeColor }}
-                  className="p-6 sm:p-8 rounded-2xl text-white shadow-md mb-6 relative overflow-hidden transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-3.5">
-                    <span className="inline-block px-3.5 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold uppercase rounded-md tracking-wider border border-white/25 font-['Prompt',sans-serif]">
-                      {current.category || current.badge || 'News'}
-                    </span>
-                  </div>
+          <h1 className="font-['Prompt',sans-serif] text-2xl sm:text-3xl lg:text-[38px] xl:text-[42px] font-bold text-white leading-[1.3] drop-shadow-sm">
+            {current.title}
+          </h1>
+        </div>
 
-                  <h1 className="font-['Prompt',sans-serif] text-2xl sm:text-3xl lg:text-[38px] font-bold text-white leading-[1.3] drop-shadow-sm">
-                    {current.title}
-                  </h1>
+        {/* 2. Main Article Content & Sidebar Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* Article Column (8 cols) */}
+          <div className="lg:col-span-8">
+            <article className="max-w-[820px] text-gray-700 leading-relaxed text-base sm:text-lg">
+              {/* Post Meta Info (Author, Date, Views, Read Time) */}
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 pb-5 mb-8 border-b border-gray-200">
+                <span className="flex items-center gap-2">
+                  <img
+                    src={current.authorImg || 'https://i.pravatar.cc/60?img=12'}
+                    alt={current.author || 'Author'}
+                    className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"
+                  />
+                  <span className="font-semibold text-gray-900">{current.author || 'Staff Writer'}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <i className="bi bi-calendar3" style={{ color: themeColor }}></i>
+                  <span>
+                    {current.date
+                      ? new Date(current.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                      : defaultArticle.date}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <i className="bi bi-eye" style={{ color: themeColor }}></i>
+                  <span>{current.views !== undefined ? `${current.views} views` : '4.5k views'}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <i className="bi bi-clock" style={{ color: themeColor }}></i>
+                  <span>{current.readTime || '3 min read'}</span>
+                </span>
+              </div>
+
+              {/* Featured Image - placed in the down section below Heading and Meta */}
+              {featuredImg && (
+                <div className="w-full max-h-[500px] sm:max-h-[560px] rounded-2xl overflow-hidden shadow-sm bg-gray-100 border border-gray-200/80 mb-8">
+                  <img
+                    src={featuredImg}
+                    alt={current.title}
+                    className="w-full h-full max-h-[500px] sm:max-h-[560px] object-cover block"
+                  />
                 </div>
-
-                {/* Post Meta Info (Author, Date, Views, Read Time) */}
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 pb-5 mb-8 border-b border-gray-200">
-                  <span className="flex items-center gap-2">
-                    <img
-                      src={current.authorImg || 'https://i.pravatar.cc/60?img=12'}
-                      alt={current.author || 'Author'}
-                      className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"
-                    />
-                    <span className="font-semibold text-gray-900">{current.author || 'Staff Writer'}</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <i className="bi bi-calendar3" style={{ color: themeColor }}></i>
-                    <span>
-                      {current.date
-                        ? new Date(current.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                        : defaultArticle.date}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <i className="bi bi-eye" style={{ color: themeColor }}></i>
-                    <span>{current.views !== undefined ? `${current.views} views` : '4.5k views'}</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <i className="bi bi-clock" style={{ color: themeColor }}></i>
-                    <span>{current.readTime || '3 min read'}</span>
-                  </span>
-                </div>
+              )}
 
                 {/* Video Player (if videoUrl is present) */}
                 {current.videoUrl && (
@@ -282,105 +278,15 @@ export default function PostDetailPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Comments Section */}
-                  <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="font-['Prompt',sans-serif] text-2xl font-bold text-[#101820] mb-8">
-                      Comments (2)
-                    </h3>
-
-                    {/* Comments list */}
-                    <div className="space-y-6 mb-12">
-                      {[
-                        {
-                          name: 'Lisa Wang',
-                          img: 'https://i.pravatar.cc/60?img=12',
-                          date: 'July 22, 2026',
-                          text: 'This is a fantastic article! Really well-written and informative. Thanks for sharing these insights.',
-                        },
-                        {
-                          name: 'Mark Johnson',
-                          img: 'https://i.pravatar.cc/60?img=18',
-                          date: 'July 21, 2026',
-                          text: 'Great read! I appreciate the depth of research and the practical perspectives included. Looking forward to more content like this.',
-                        },
-                      ].map((c, idx) => (
-                        <div key={idx} className="flex gap-4 p-5 rounded-xl bg-gray-50 border border-gray-100">
-                          <img
-                            src={c.img}
-                            alt={c.name}
-                            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="font-['Prompt',sans-serif] font-bold text-gray-900 text-sm">
-                                {c.name}
-                              </h5>
-                              <span className="text-xs text-gray-400">{c.date}</span>
-                            </div>
-                            <p className="text-sm text-gray-600 leading-relaxed mb-2">
-                              {c.text}
-                            </p>
-                            <button
-                              style={{ color: themeColor }}
-                              className="text-xs font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <i className="bi bi-reply"></i> Reply
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Leave a reply form */}
-                    <div className="bg-[#fff6ef] border border-[#e8e5dc] rounded-2xl p-6 sm:p-8">
-                      <h4 className="font-['Prompt',sans-serif] text-xl font-bold text-[#101820] mb-2">
-                        Leave a Reply
-                      </h4>
-                      <p className="text-xs text-gray-500 mb-6">
-                        Your email address will not be published. Required fields are marked *
-                      </p>
-                      <form onSubmit={(e) => { e.preventDefault(); alert('Comment submitted for review!'); }} className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <input
-                            type="text"
-                            required
-                            placeholder="Your Name *"
-                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500"
-                          />
-                          <input
-                            type="email"
-                            required
-                            placeholder="Your Email *"
-                            className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500"
-                          />
-                        </div>
-                        <textarea
-                          required
-                          rows={4}
-                          placeholder="Write your comment here... *"
-                          className="w-full px-4 py-2.5 bg-white border border-[#e8e5dc] rounded-lg text-sm text-gray-800 outline-none focus:border-gray-500 resize-y"
-                        ></textarea>
-                        <button
-                          type="submit"
-                          style={{ backgroundColor: themeColor }}
-                          className="px-6 py-2.5 text-white font-['Prompt',sans-serif] font-semibold text-sm rounded-full transition-opacity hover:opacity-90 cursor-pointer shadow-md"
-                        >
-                          Post Comment
-                        </button>
-                      </form>
-                    </div>
-                  </div>
                 </article>
               </div>
 
               {/* Sidebar Column (4 cols) */}
               <div className="lg:col-span-4">
                 <CategorySidebar activeCategory={current.category || 'Sports'} />
-              </div>
             </div>
-          </div>
-        </section>
+        </div>
+      </div>
     </div>
   );
 }

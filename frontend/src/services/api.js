@@ -72,8 +72,19 @@ export async function fetchApi(endpoint, options = {}) {
   }
 }
 
+export const DEFAULT_NEWS_IMAGE = '/images/placeholder-news.svg';
+
+export function handleImageError(e, fallback = DEFAULT_NEWS_IMAGE) {
+  if (!e?.currentTarget) return;
+  if (e.currentTarget.dataset.fallbackApplied) return;
+  e.currentTarget.dataset.fallbackApplied = 'true';
+  e.currentTarget.src = fallback;
+}
+
 export function formatImageUrl(url) {
-  if (!url) return 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800&q=80';
+  if (!url || typeof url !== 'string' || url.includes('photo-1504711434969-e33886168d5c')) {
+    return DEFAULT_NEWS_IMAGE;
+  }
   if (url.startsWith('http')) return url;
   const backendBase = import.meta.env.VITE_BACKEND_URL || '';
   if (url.startsWith('/')) return `${backendBase}${url}`;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchApi, formatImageUrl } from '../../services/api';
+import { fetchApi, formatImageUrl, handleImageError } from '../../services/api';
 
 const TRENDING_ITEMS = [
   { text: 'AI Revolution 2026', count: '25.3K' },
@@ -220,10 +220,7 @@ export default function SearchModal({ isOpen, onClose }) {
                         src={formatImageUrl(item.image)}
                         alt={item.title}
                         className="w-[70px] h-[60px] object-cover rounded-md flex-shrink-0"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=150&q=80';
-                        }}
+                        onError={(e) => handleImageError(e)}
                       />
                       <div className="flex-1 min-w-0">
                         <h6 className="text-sm font-semibold text-[#222222] group-hover:text-[#ff4c60] line-clamp-2 leading-snug mb-1 transition-colors">

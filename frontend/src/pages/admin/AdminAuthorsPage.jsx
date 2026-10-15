@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { formatImageUrl } from '../../services/api';
+import { formatImageUrl, handleImageError } from '../../services/api';
 
 const ROLE_OPTIONS = [
   'Chief Editor',
@@ -295,10 +295,7 @@ export default function AdminAuthorsPage() {
                             <img
                               src={photoUrl || defaultAvatar}
                               alt={a.name}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = defaultAvatar;
-                              }}
+                              onError={(e) => handleImageError(e, defaultAvatar)}
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -434,10 +431,7 @@ export default function AdminAuthorsPage() {
                       }
                       alt="Avatar Preview"
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://ui-avatars.com/api/?name=Author&background=c91f26&color=fff';
-                      }}
+                      onError={(e) => handleImageError(e, 'https://ui-avatars.com/api/?name=Author&background=c91f26&color=fff')}
                     />
                   </div>
 

@@ -128,7 +128,7 @@ const rawArticles = [
     author: "John Doe",
     readTime: "5 min read",
     views: 12500,
-    image: "https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=1600&q=80",
+    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1600&q=80",
     featured: true,
     tags: ["Technology", "AI", "Innovation", "Machine Learning"],
   },

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useOutletContext, useLocation, useParams, useNavigate } from 'react-router-dom';
 import HtmlEditor from '../admin/HtmlEditor';
 import Pagination from '../common/Pagination';
-import { formatImageUrl } from '../../services/api';
+import { formatImageUrl, handleImageError } from '../../services/api';
 
 export default function NewsManagementView({ mode = 'admin', defaultEditor = false }) {
   const context = useOutletContext() || {};
@@ -611,10 +611,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                       <img
                         src={formatImageUrl(artForm.image)}
                         alt="Preview"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800&q=80';
-                        }}
+                        onError={(e) => handleImageError(e)}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -668,10 +665,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                           <img
                             src={formatImageUrl(gUrl)}
                             alt={`Gallery ${gIdx}`}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800&q=80';
-                            }}
+                            onError={(e) => handleImageError(e)}
                             className="w-full h-full object-cover"
                           />
                           <button
@@ -924,10 +918,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                       <img
                         src={formatImageUrl(a.image)}
                         alt={a.title}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168d5c?w=800&q=80';
-                        }}
+                        onError={(e) => handleImageError(e)}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">

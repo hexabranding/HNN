@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { formatImageUrl } from '../../services/api';
+import { formatImageUrl, handleImageError } from '../../services/api';
 
 export default function AuthorSettingsPage() {
   const context = useOutletContext() || {};
@@ -122,10 +122,7 @@ export default function AuthorSettingsPage() {
               <img
                 src={formData.photo ? formatImageUrl(formData.photo) : defaultAvatar}
                 alt={formData.name}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = defaultAvatar;
-                }}
+                onError={(e) => handleImageError(e, defaultAvatar)}
                 className="w-full h-full object-cover"
               />
             </div>

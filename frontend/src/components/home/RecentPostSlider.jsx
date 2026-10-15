@@ -10,7 +10,7 @@ export default function RecentPostSlider({ articles = [] }) {
     articles && articles.length >= 4 ? articles : STATIC_RECENT_POSTS;
 
   return (
-    <section className="recent-post-section pt-[120px] pb-0 bg-white w-full">
+    <section className="recent-post-section pt-6 pb-0 bg-white w-full">
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title matching .section-title-1.mb-50.text-center */}
         <div className="mb-[50px] text-center">

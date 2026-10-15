@@ -32,10 +32,10 @@ export default function CategorySlider({ categories = [] }) {
       : STATIC_CATEGORIES;
 
   return (
-    <section className="category-section pt-[100px] bg-white w-full">
+    <section className="category-section pt-6 bg-white w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title matching .section-title-1.mb-50.text-center */}
-        <div className="mb-[50px] text-center">
+        <div className="mb-[32px] text-center">
           <h2 className="font-['Prompt',sans-serif] text-[32px] sm:text-[40px] font-bold text-[#101010] leading-[1.2] inline-flex items-baseline flex-wrap justify-center">
             <span>Entire Topic</span>
             <span

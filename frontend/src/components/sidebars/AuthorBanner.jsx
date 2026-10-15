@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function AuthorBanner() {
   return (
-    <section className="py-12 bg-white">
+    <section className="pt-10 pb-3 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl bg-gradient-to-r from-red-50 via-rose-50/50 to-orange-50 border border-red-100/80 p-8 sm:p-12 lg:p-16 overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10 shadow-sm">
           {/* Subtle background decorative circle */}

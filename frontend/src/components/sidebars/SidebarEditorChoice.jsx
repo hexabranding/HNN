@@ -4,10 +4,14 @@ import { formatImageUrl } from '../../services/api';
 
 export default function SidebarEditorChoice({ articles = [] }) {
   const displayItems =
-    articles && articles.length >= 5 ? articles.slice(0, 5) : STATIC_EDITOR_CHOICE;
+    articles && articles.length >= 6
+      ? articles.slice(0, 6)
+      : articles && articles.length > 0
+      ? [...articles.slice(0, 6), ...STATIC_EDITOR_CHOICE.slice(articles.length, 6)]
+      : STATIC_EDITOR_CHOICE;
 
   return (
-    <aside className="post-side-bar-1 space-y-[40px]">
+    <aside className="post-side-bar-1 space-y-5">
       {/* Editor Choice Widget matching .sidebar-widget-1 */}
       <div className="border border-[#eee] rounded-[8px] p-[25px] bg-white">
         <h6 className="font-['Prompt',sans-serif] text-[18px] font-semibold text-[#101010] mb-[20px] pb-[12px] border-b-2 border-[#eee] relative after:content-[''] after:absolute after:-bottom-[2px] after:left-0 after:w-[40px] after:h-[2px] after:bg-[#ff4c60]">

@@ -7,18 +7,23 @@ import { STATIC_MULTI_LIST } from '../../data/staticHomeData';
 import { formatImageUrl } from '../../services/api';
 
 export default function MultiListSection({ articles = [] }) {
-  // If API has enough articles (at least 15), hydrate into the 3 groups; otherwise use exact static data
+  const ITEMS_PER_GROUP = 6;
+  // If API has enough articles (at least 6), hydrate into the 3 groups with 6 cards each; otherwise use exact static data
   const groups =
-    articles && articles.length >= 15
+    articles && articles.length >= ITEMS_PER_GROUP
       ? STATIC_MULTI_LIST.map((staticGroup, gIdx) => {
-          const startIdx = gIdx * 5;
-          const endIdx = startIdx + 5;
-          const apiSlice = articles.slice(startIdx, endIdx);
+          const startIdx = gIdx * ITEMS_PER_GROUP;
+          let apiSlice = articles.slice(startIdx, startIdx + ITEMS_PER_GROUP);
+          if (apiSlice.length < ITEMS_PER_GROUP) {
+            const needed = ITEMS_PER_GROUP - apiSlice.length;
+            const extra = articles.slice(0, needed);
+            apiSlice = [...apiSlice, ...extra];
+          }
           return {
             groupTitle: staticGroup.groupTitle,
             groupSubtitle: staticGroup.groupSubtitle,
             items: apiSlice.map((item) => {
-              const d = item.date ? new Date(item.date) : new Date();
+              const d = item.date ? new Date(item.date) : new Date(item.createdAt || Date.now());
               const day = isNaN(d.getTime()) ? '12' : d.getDate().toString().padStart(2, '0');
               const mon = isNaN(d.getTime()) ? 'Jul' : d.toLocaleString('en', { month: 'short' });
               return {

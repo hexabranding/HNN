@@ -7,10 +7,10 @@ export default function LatestArticlesGrid({ articles = [] }) {
     articles && articles.length >= 3 ? articles.slice(0, 3) : STATIC_LATEST_ARTICLES;
 
   return (
-    <section className="latest-blog-section pt-[100px] pb-[100px] bg-white w-full">
+    <section className="latest-blog-section pt-5 pb-5 bg-white w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title matching .section-title-1.mb-50.text-center */}
-        <div className="mb-[50px] text-center">
+        <div className="mb-[36px] text-center">
           <h2 className="font-['Prompt',sans-serif] text-[32px] sm:text-[40px] font-bold text-[#101010] leading-[1.2] inline-flex items-baseline flex-wrap justify-center">
             <span>Latest</span>
             <span
@@ -49,7 +49,7 @@ export default function LatestArticlesGrid({ articles = [] }) {
             return (
               <div
                 key={item._id || item.slug || idx}
-                className="blog-grid-1 border border-[#eee] rounded-[10px] overflow-hidden bg-white mb-[30px] transition-all duration-400 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] relative group flex flex-col h-full"
+                className="blog-grid-1 border border-[#eee] rounded-[10px] overflow-hidden bg-white transition-all duration-400 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] relative group flex flex-col h-full"
               >
                 {/* Badge matching .eg-badge */}
                 <span

@@ -58,7 +58,7 @@ export default function HomePage() {
       <TabbedNewsSection allArticles={allArticles} />
 
       {/* Section 3: Blog List Multi-List & Sidebar Editor Choice / Stay Connected */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           <div className="lg:col-span-8">
             <MultiListSection articles={allArticles} />

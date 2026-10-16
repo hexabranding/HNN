@@ -40,4 +40,33 @@
   border-radius: 6px;
 }
 
+/* Rich Article HTML Content Formatting (bold, strong, italic, underline, quotes) */
+.article-html-content b,
+.article-html-content strong,
+.article-html-content [style*="font-weight"],
+.article-html-content .font-bold {
+  font-weight: 700 !important;
+  color: #111111 !important;
+}
+
+.article-html-content i,
+.article-html-content em {
+  font-style: italic !important;
+}
+
+.article-html-content u {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+.article-html-content s,
+.article-html-content strike {
+  text-decoration: line-through !important;
+}
+
+.article-html-content p {
+  margin-bottom: 1.25rem;
+  line-height: 1.85;
+}
+
 

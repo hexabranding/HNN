@@ -81,9 +81,13 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
   const [searchParams, setSearchParams] = useSearchParams();
   const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const sortFromUrl = searchParams.get('sort') || 'newest';
+  const timeframeFromUrl = searchParams.get('timeframe') || 'all';
+  const dateFromUrl = searchParams.get('date') || '';
 
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [sortBy, setSortBy] = useState(sortFromUrl);
+  const [timeframe, setTimeframe] = useState(timeframeFromUrl);
+  const [calendarDate, setCalendarDate] = useState(dateFromUrl);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingArticles, setLoadingArticles] = useState(true);
@@ -128,8 +132,12 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
   useEffect(() => {
     const p = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const s = searchParams.get('sort') || 'newest';
+    const tf = searchParams.get('timeframe') || 'all';
+    const cd = searchParams.get('date') || '';
     if (p !== currentPage) setCurrentPage(p);
     if (s !== sortBy) setSortBy(s);
+    if (tf !== timeframe) setTimeframe(tf);
+    if (cd !== calendarDate) setCalendarDate(cd);
   }, [searchParams]);
 
   // 1. Fetch category metadata from DB to get official label & parent
@@ -188,7 +196,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     };
   }, [categoryKey, urlParentSlug]);
 
-  const CARDS_PER_PAGE = 10;
+  const CARDS_PER_PAGE = 6;
 
   // 2. Fetch articles from Backend with server-side pagination & sorting
   useEffect(() => {
@@ -199,8 +207,14 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
         const queryTerm = categoryInfo?.label
           ? `${categoryKey},${categoryInfo.label}`
           : categoryKey;
+        let dateQuery = '';
+        if (calendarDate) {
+          dateQuery = `&date=${encodeURIComponent(calendarDate)}`;
+        } else if (timeframe && timeframe !== 'all') {
+          dateQuery = `&timeframe=${encodeURIComponent(timeframe)}`;
+        }
         const res = await fetchApi(
-          `/news?category=${encodeURIComponent(queryTerm)}&page=${currentPage}&limit=${CARDS_PER_PAGE}&sort=${encodeURIComponent(sortBy)}`,
+          `/news?category=${encodeURIComponent(queryTerm)}&page=${currentPage}&limit=${CARDS_PER_PAGE}&sort=${encodeURIComponent(sortBy)}${dateQuery}`,
           { skipCache: true }
         );
         if (isMounted) {
@@ -230,7 +244,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     return () => {
       isMounted = false;
     };
-  }, [categoryKey, categoryInfo?.label, currentPage, sortBy]);
+  }, [categoryKey, categoryInfo?.label, currentPage, sortBy, timeframe, calendarDate]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -238,6 +252,11 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     nextParams.set('page', newPage.toString());
     if (sortBy && sortBy !== 'newest') {
       nextParams.set('sort', sortBy);
+    }
+    if (calendarDate) {
+      nextParams.set('date', calendarDate);
+    } else if (timeframe && timeframe !== 'all') {
+      nextParams.set('timeframe', timeframe);
     }
     setSearchParams(nextParams);
     window.scrollTo({ top: 380, behavior: 'smooth' });
@@ -254,11 +273,73 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
     } else {
       nextParams.set('sort', newSort);
     }
+    if (calendarDate) {
+      nextParams.set('date', calendarDate);
+    } else if (timeframe && timeframe !== 'all') {
+      nextParams.set('timeframe', timeframe);
+    }
+    setSearchParams(nextParams);
+  };
+
+  const handleTimeframeChange = (e) => {
+    const newTf = e.target.value;
+    setTimeframe(newTf);
+    setCurrentPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', '1');
+    if (newTf === 'all') {
+      nextParams.delete('timeframe');
+    } else {
+      nextParams.set('timeframe', newTf);
+      // Clear specific calendar date when choosing a relative preset
+      nextParams.delete('date');
+      setCalendarDate('');
+    }
+    if (sortBy && sortBy !== 'newest') {
+      nextParams.set('sort', sortBy);
+    }
+    setSearchParams(nextParams);
+  };
+
+  const handleCalendarDateChange = (e) => {
+    const newDate = e.target.value;
+    setCalendarDate(newDate);
+    setCurrentPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', '1');
+    if (newDate) {
+      nextParams.set('date', newDate);
+      // Clear preset timeframe when an exact calendar date is chosen
+      nextParams.delete('timeframe');
+      setTimeframe('all');
+    } else {
+      nextParams.delete('date');
+    }
+    if (sortBy && sortBy !== 'newest') {
+      nextParams.set('sort', sortBy);
+    }
     setSearchParams(nextParams);
   };
 
   // Combine dynamic articles or fallback data
-  const isUsingFallback = apiArticles.length === 0 && hasFallback && fallbackData.articles;
+  const fallbackList = hasFallback
+    ? [
+        ...(fallbackData.articles || []),
+        ...((fallbackData.extraNews || []).map((e, idx) => ({
+          badge: e.tag || categoryLabel,
+          author: 'Staff Reporter',
+          date: e.date || 'July 19, 2026',
+          views: '3.4k views',
+          readTime: e.time || '5 min read',
+          title: e.title,
+          excerpt: e.text || e.excerpt || '',
+          image: e.image,
+          slug: e.slug || `extra-news-${idx + 1}`,
+        }))),
+      ]
+    : [];
+
+  const isUsingFallback = apiArticles.length === 0 && hasFallback && fallbackList.length > 0;
   const displayedArticles =
     apiArticles.length > 0
       ? apiArticles.map((a, i) => ({
@@ -285,11 +366,13 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
           slug: a.slug || `post-${i + 1}`,
         }))
       : isUsingFallback
-      ? fallbackData.articles.slice((currentPage - 1) * CARDS_PER_PAGE, currentPage * CARDS_PER_PAGE)
+      ? fallbackList.slice((currentPage - 1) * CARDS_PER_PAGE, currentPage * CARDS_PER_PAGE)
       : [];
 
-  const effectiveTotalCount = isUsingFallback ? (fallbackData.articles?.length || 0) : totalCount;
-  const effectiveTotalPages = isUsingFallback ? Math.max(1, Math.ceil(effectiveTotalCount / CARDS_PER_PAGE)) : totalPages;
+  const effectiveTotalCount = isUsingFallback ? fallbackList.length : totalCount;
+  const effectiveTotalPages = isUsingFallback
+    ? Math.max(1, Math.ceil(fallbackList.length / CARDS_PER_PAGE))
+    : totalPages;
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
@@ -336,32 +419,98 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
               {/* Left Column: 8 cols (Blog Grid) */}
               <div className="lg:col-span-8">
                 {/* Professional Filter & Sort Toolbar */}
-                <div className="mb-6 pb-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="mb-6 pb-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="text-sm text-gray-500 font-medium">
                     Showing <span className="text-gray-900 font-semibold">{effectiveTotalCount > 0 ? (currentPage - 1) * CARDS_PER_PAGE + 1 : 0}</span>–
                     <span className="text-gray-900 font-semibold">{Math.min(currentPage * CARDS_PER_PAGE, effectiveTotalCount)}</span> of{' '}
                     <span className="text-gray-900 font-bold">{effectiveTotalCount}</span> stories
                   </div>
 
-                  <div className="flex items-center gap-2.5 self-start sm:self-auto">
-                    <label htmlFor="sortSelect" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
-                      <i className="bi bi-sort-down text-sm text-[#ff4c60]"></i>
-                      Sort by:
-                    </label>
-                    <select
-                      id="sortSelect"
-                      value={sortBy}
-                      onChange={handleSortChange}
-                      className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="popular">Most Popular / Viewed</option>
-                      <option value="likes">Most Liked</option>
-                      <option value="comments">Most Commented</option>
-                      <option value="oldest">Oldest First</option>
-                    </select>
+                  <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+                    {/* Interactive Calendar Date Picker */}
+                    <div className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 focus-within:border-[#ff4c60] focus-within:ring-2 focus-within:ring-[#ff4c60]/10 transition">
+                      <i className="bi bi-calendar-event text-sm text-[#ff4c60]"></i>
+                      <label htmlFor="calendarDateInput" className="text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hidden sm:inline">
+                        Calendar:
+                      </label>
+                      <input
+                        id="calendarDateInput"
+                        type="date"
+                        value={calendarDate}
+                        onChange={handleCalendarDateChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-transparent outline-none cursor-pointer"
+                        title="Pick a date from the calendar"
+                      />
+                      {calendarDate && (
+                        <button
+                          type="button"
+                          onClick={() => handleCalendarDateChange({ target: { value: '' } })}
+                          className="text-gray-400 hover:text-red-500 text-xs cursor-pointer ml-0.5"
+                          title="Clear calendar date"
+                        >
+                          <i className="bi bi-x-circle-fill"></i>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        id="timeframeSelect"
+                        value={timeframe}
+                        onChange={handleTimeframeChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
+                      >
+                        <option value="all">Presets (Anytime)</option>
+                        <option value="today">Today (Last 24h)</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="10d">Last 10 Days</option>
+                        <option value="30d">Last 30 Days (1 Month)</option>
+                        <option value="older_30d">Older than 1 Month</option>
+                        <option value="older_90d">Older than 3 Months</option>
+                      </select>
+                    </div>
+
+                    {/* Sort Filter */}
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="sortSelect" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
+                        <i className="bi bi-sort-down text-sm text-[#ff4c60]"></i>
+                        Sort:
+                      </label>
+                      <select
+                        id="sortSelect"
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="popular">Most Popular / Viewed</option>
+                        <option value="likes">Most Liked</option>
+                        <option value="comments">Most Commented</option>
+                        <option value="oldest">Oldest First</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
+
+                {/* Active Calendar Date Banner */}
+                {calendarDate && (
+                  <div className="mb-6 flex items-center justify-between gap-3 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-[#c91f26]">
+                    <div className="flex items-center gap-2">
+                      <i className="bi bi-calendar-check-fill text-base"></i>
+                      <span>
+                        Showing stories from calendar date: <strong className="font-bold underline">{new Date(calendarDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCalendarDateChange({ target: { value: '' } })}
+                      className="px-2.5 py-1 bg-white hover:bg-red-100 text-[#c91f26] border border-red-200 rounded-lg font-bold text-xs transition cursor-pointer shadow-2xs"
+                    >
+                      Clear Date ✕
+                    </button>
+                  </div>
+                )}
 
                 {loadingArticles ? (
                   <div className="py-20 text-center">
@@ -457,7 +606,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                 </div>
                 )}
 
-                {/* Server-Side Pagination matching HEXA NEWS standard (10 cards per page) */}
+                {/* Server-Side Pagination matching HEXA NEWS standard (6 cards per page) */}
                 {displayedArticles.length > 0 && effectiveTotalPages > 1 && (
                   <Pagination
                     currentPage={currentPage}

@@ -49,13 +49,20 @@ export default function Header({ onOpenSearch }) {
     const handleCategoriesUpdate = () => {
       loadCategories(true);
     };
+
+    const handleStorageUpdate = (e) => {
+      if (e.key === 'hexa_categories_version' || e.key === 'hexa_categories_updated') {
+        loadCategories(true);
+      }
+    };
+
     window.addEventListener('hexa_categories_updated', handleCategoriesUpdate);
-    window.addEventListener('storage', handleCategoriesUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
 
     return () => {
       isMounted = false;
       window.removeEventListener('hexa_categories_updated', handleCategoriesUpdate);
-      window.removeEventListener('storage', handleCategoriesUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
     };
   }, []);
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useOutletContext, Link, useSearchParams } from 'react-router-dom';
 import { clearApiCache } from '../../services/api';
 
 export default function AdminCategoriesPage() {
@@ -11,15 +11,65 @@ export default function AdminCategoriesPage() {
     localStorage.getItem('hexa_admin_token') ||
     '';
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchFromUrl = searchParams.get('search') || '';
+  const filterFromUrl = searchParams.get('type') || 'ALL';
+
   // Local categories state for instant UI updates (independent of parent layout delay)
   const [localCategories, setLocalCategories] = useState(categories || []);
   const [isLoadingDirect, setIsLoadingDirect] = useState(false);
 
-  // Search, filter & accordion states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('ALL'); // 'ALL' | 'WITH_SUB' | 'SINGLE'
+  // Search, filter & accordion states (Synced with URL)
+  const [searchQuery, setSearchQuery] = useState(searchFromUrl);
+  const [filterType, setFilterType] = useState(filterFromUrl); // 'ALL' | 'WITH_SUB' | 'SINGLE'
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedMap, setExpandedMap] = useState({});
+
+  const updateCategoryUrlParams = useCallback((updates) => {
+    const nextParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value || value === 'ALL') {
+        nextParams.delete(key);
+      } else {
+        nextParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Sync state on browser back/forward
+  useEffect(() => {
+    const s = searchParams.get('search') || '';
+    const ft = searchParams.get('type') || 'ALL';
+    if (s !== searchQuery) setSearchQuery(s);
+    if (ft !== filterType) setFilterType(ft);
+  }, [searchParams]);
+
+  // Debounced search sync
+  const isFirstCatSearch = useRef(true);
+  useEffect(() => {
+    if (isFirstCatSearch.current) {
+      isFirstCatSearch.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      const currentParam = searchParams.get('search') || '';
+      if (searchQuery !== currentParam) {
+        updateCategoryUrlParams({ search: searchQuery });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleFilterTypeChange = (type) => {
+    setFilterType(type);
+    updateCategoryUrlParams({ type });
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    updateCategoryUrlParams({ search: '' });
+  };
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -48,9 +98,12 @@ export default function AdminCategoriesPage() {
       .replace(/^-+|-+$/g, '');
   };
 
+  const isFetchingCategoriesRef = useRef(false);
   // Direct fetch from backend to ensure categories are 100% fresh
   const fetchFreshCategories = useCallback(async () => {
+    if (isFetchingCategoriesRef.current) return;
     try {
+      isFetchingCategoriesRef.current = true;
       setIsLoadingDirect(true);
       const res = await fetch(`/api/categories?_t=${Date.now()}`);
       if (res.ok) {
@@ -63,6 +116,7 @@ export default function AdminCategoriesPage() {
       console.warn('Direct category fetch warning:', err);
     } finally {
       setIsLoadingDirect(false);
+      isFetchingCategoriesRef.current = false;
     }
   }, []);
 
@@ -73,12 +127,20 @@ export default function AdminCategoriesPage() {
     const handleCategoriesUpdate = () => {
       fetchFreshCategories();
     };
+
+    const handleStorageUpdate = (e) => {
+      // ONLY re-fetch if categories were specifically updated across tabs
+      if (e.key === 'hexa_categories_version' || e.key === 'hexa_categories_updated') {
+        fetchFreshCategories();
+      }
+    };
+
     window.addEventListener('hexa_categories_updated', handleCategoriesUpdate);
-    window.addEventListener('storage', handleCategoriesUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
 
     return () => {
       window.removeEventListener('hexa_categories_updated', handleCategoriesUpdate);
-      window.removeEventListener('storage', handleCategoriesUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
     };
   }, [fetchFreshCategories]);
 
@@ -553,8 +615,9 @@ export default function AdminCategoriesPage() {
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+              onClick={handleClearSearch}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
+              title="Clear search"
             >
               <i className="bi bi-x-circle-fill"></i>
             </button>
@@ -565,7 +628,7 @@ export default function AdminCategoriesPage() {
           <div className="flex items-center p-1 bg-[#f1f5f9] rounded-lg border border-[#e2e8f0] text-xs font-semibold w-full sm:w-auto">
             <button
               type="button"
-              onClick={() => setFilterType('ALL')}
+              onClick={() => handleFilterTypeChange('ALL')}
               className={`px-3 py-1.5 rounded-md transition cursor-pointer flex-1 sm:flex-initial text-center ${
                 filterType === 'ALL'
                   ? 'bg-white text-[#0f172a] shadow-xs'
@@ -576,7 +639,7 @@ export default function AdminCategoriesPage() {
             </button>
             <button
               type="button"
-              onClick={() => setFilterType('WITH_SUB')}
+              onClick={() => handleFilterTypeChange('WITH_SUB')}
               className={`px-3 py-1.5 rounded-md transition cursor-pointer flex-1 sm:flex-initial text-center ${
                 filterType === 'WITH_SUB'
                   ? 'bg-white text-[#0f172a] shadow-xs'
@@ -587,7 +650,7 @@ export default function AdminCategoriesPage() {
             </button>
             <button
               type="button"
-              onClick={() => setFilterType('SINGLE')}
+              onClick={() => handleFilterTypeChange('SINGLE')}
               className={`px-3 py-1.5 rounded-md transition cursor-pointer flex-1 sm:flex-initial text-center ${
                 filterType === 'SINGLE'
                   ? 'bg-white text-[#0f172a] shadow-xs'

@@ -59,9 +59,12 @@ export default function DashboardOverviewView({ mode = 'admin' }) {
       {/* 1. Metric Stats Cards */}
       {isAuthorMode ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <Link
+            to="/author-dashboard/news?scope=my"
+            className="bg-white border border-[#e5e5e5] hover:border-[#c91f26] rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition flex flex-col justify-between group"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-[#888888] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#888888] group-hover:text-[#c91f26] uppercase tracking-wider transition-colors">
                 My Articles
               </span>
               <div className="w-8 h-8 rounded-lg bg-red-50 text-[#c91f26] flex items-center justify-center text-sm">
@@ -71,8 +74,8 @@ export default function DashboardOverviewView({ mode = 'admin' }) {
             <div className="text-[28px] font-extrabold text-[#c91f26] leading-none mb-1">
               {authorStats.articlesCount || myStories.length}
             </div>
-            <div className="text-[11px] text-[#888888]">Authored news stories</div>
-          </div>
+            <div className="text-[11px] text-[#888888]">Authored news stories &rarr;</div>
+          </Link>
 
           <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
@@ -89,9 +92,12 @@ export default function DashboardOverviewView({ mode = 'admin' }) {
             <div className="text-[11px] text-[#888888]">Article readership count</div>
           </div>
 
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <Link
+            to="/author-dashboard/news"
+            className="bg-white border border-[#e5e5e5] hover:border-emerald-500 rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition flex flex-col justify-between group"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-[#888888] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#888888] group-hover:text-emerald-700 uppercase tracking-wider transition-colors">
                 Published
               </span>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
@@ -101,12 +107,15 @@ export default function DashboardOverviewView({ mode = 'admin' }) {
             <div className="text-[28px] font-extrabold text-[#2e7d32] leading-none mb-1">
               {authorStats.publishedCount || myStories.filter((a) => a.published !== false).length}
             </div>
-            <div className="text-[11px] text-[#888888]">Live stories on portal</div>
-          </div>
+            <div className="text-[11px] text-[#888888]">Live stories on portal &rarr;</div>
+          </Link>
 
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <Link
+            to="/author-dashboard/settings"
+            className="bg-white border border-[#e5e5e5] hover:border-purple-400 rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition flex flex-col justify-between group"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-[#888888] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#888888] group-hover:text-purple-700 uppercase tracking-wider transition-colors">
                 Editorial Role
               </span>
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm">
@@ -118,38 +127,47 @@ export default function DashboardOverviewView({ mode = 'admin' }) {
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>Active Author</span>
+              <span>Edit Profile &rarr;</span>
             </div>
-          </div>
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-[#e5e5e5] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <Link
+            to="/admin/news"
+            className="bg-white border border-[#e5e5e5] hover:border-[#c91f26] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition block group"
+          >
             <div className="text-[28px] font-extrabold text-[#c91f26] leading-none mb-1">
               {stats.articles || sourceArticles.length}
             </div>
-            <div className="text-[12px] text-[#888888] uppercase tracking-[1px] font-medium">
-              ARTICLES
+            <div className="text-[12px] text-[#888888] group-hover:text-[#c91f26] uppercase tracking-[1px] font-medium transition-colors">
+              ARTICLES &rarr;
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white border border-[#e5e5e5] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <Link
+            to="/admin/categories"
+            className="bg-white border border-[#e5e5e5] hover:border-[#c91f26] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition block group"
+          >
             <div className="text-[28px] font-extrabold text-[#c91f26] leading-none mb-1">
               {stats.categories || 0}
             </div>
-            <div className="text-[12px] text-[#888888] uppercase tracking-[1px] font-medium">
-              CATEGORIES
+            <div className="text-[12px] text-[#888888] group-hover:text-[#c91f26] uppercase tracking-[1px] font-medium transition-colors">
+              CATEGORIES &rarr;
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white border border-[#e5e5e5] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <Link
+            to="/admin/authors"
+            className="bg-white border border-[#e5e5e5] hover:border-[#c91f26] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition block group"
+          >
             <div className="text-[28px] font-extrabold text-[#c91f26] leading-none mb-1">
               {stats.authors || 0}
             </div>
-            <div className="text-[12px] text-[#888888] uppercase tracking-[1px] font-medium">
-              AUTHORS
+            <div className="text-[12px] text-[#888888] group-hover:text-[#c91f26] uppercase tracking-[1px] font-medium transition-colors">
+              AUTHORS &rarr;
             </div>
-          </div>
+          </Link>
 
           <div className="bg-white border border-[#e5e5e5] rounded-[12px] p-5 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
             <div className="text-[28px] font-extrabold text-[#c91f26] leading-none mb-1">

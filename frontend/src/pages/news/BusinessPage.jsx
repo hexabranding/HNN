@@ -49,6 +49,51 @@ const DEFAULT_BUSINESS_ARTICLES = [
     slug: 'how-ai-reshaping-corporate-decision-making',
     badge: 'AI & Business',
   },
+  {
+    title: 'Global Semiconductor Supply Chains Pivot Toward Localized Hubs',
+    date: 'July 17, 2026',
+    readTime: '5 min read',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=85',
+    excerpt: 'Governments and tech conglomerates invest billions in regional foundry facilities to reduce dependencies on single-origin chip manufacturing.',
+    slug: 'global-semiconductor-supply-chains-pivot',
+    badge: 'Manufacturing',
+  },
+  {
+    title: 'Fintech Breakthroughs: Instant Cross-Border Clearing for Small Enterprises',
+    date: 'July 16, 2026',
+    readTime: '4 min read',
+    image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=1200&q=85',
+    excerpt: 'Decentralized settlement corridors now allow micro and medium exporters to receive immediate payment clearance with near-zero remittance fees.',
+    slug: 'fintech-breakthroughs-instant-cross-border',
+    badge: 'Fintech',
+  },
+  {
+    title: 'Renewable Energy Infrastructure Surpasses Fossil Investments',
+    date: 'July 15, 2026',
+    readTime: '6 min read',
+    image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=1200&q=85',
+    excerpt: 'For the third consecutive quarter, institutional capital allocations in utility-scale solar and offshore wind exceed conventional hydrocarbons.',
+    slug: 'renewable-energy-infrastructure-surpasses-fossil',
+    badge: 'Clean Energy',
+  },
+  {
+    title: 'Commercial Real Estate Adapts to Flexible Co-Working Conversions',
+    date: 'July 14, 2026',
+    readTime: '5 min read',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=85',
+    excerpt: 'Urban property developers transform traditional skyscraper leases into dynamic modular spaces catering to distributed corporate teams.',
+    slug: 'commercial-real-estate-flexible-conversions',
+    badge: 'Real Estate',
+  },
+  {
+    title: 'The Rise of Sovereign Wealth Funds in Venture Scaling Rounds',
+    date: 'July 13, 2026',
+    readTime: '6 min read',
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=85',
+    excerpt: 'State-backed investment entities are anchoring late-stage funding series for foundational technologies across robotics and biotechnology.',
+    slug: 'sovereign-wealth-funds-venture-scaling',
+    badge: 'Venture Capital',
+  },
 ];
 
 const BUSINESS_TOPICS = [
@@ -91,9 +136,13 @@ export default function BusinessPage() {
   const filterTag = searchParams.get('tag') || '';
   const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const sortFromUrl = searchParams.get('sort') || 'newest';
+  const timeframeFromUrl = searchParams.get('timeframe') || 'all';
+  const calendarDateFromUrl = searchParams.get('date') || '';
 
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [sortBy, setSortBy] = useState(sortFromUrl);
+  const [timeframe, setTimeframe] = useState(timeframeFromUrl);
+  const [calendarDate, setCalendarDate] = useState(calendarDateFromUrl);
   const [articles, setArticles] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -105,8 +154,12 @@ export default function BusinessPage() {
   useEffect(() => {
     const p = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const s = searchParams.get('sort') || 'newest';
+    const tf = searchParams.get('timeframe') || 'all';
+    const cd = searchParams.get('date') || '';
     if (p !== currentPage) setCurrentPage(p);
     if (s !== sortBy) setSortBy(s);
+    if (tf !== timeframe) setTimeframe(tf);
+    if (cd !== calendarDate) setCalendarDate(cd);
   }, [searchParams]);
 
   useEffect(() => {
@@ -120,6 +173,8 @@ export default function BusinessPage() {
         qp.set('page', currentPage.toString());
         qp.set('limit', CARDS_PER_PAGE.toString());
         if (sortBy) qp.set('sort', sortBy);
+        if (timeframe && timeframe !== 'all') qp.set('timeframe', timeframe);
+        if (calendarDate) qp.set('date', calendarDate);
 
         const data = await fetchApi(`/news?${qp.toString()}`, { skipCache: true });
         if (isMounted) {
@@ -166,13 +221,15 @@ export default function BusinessPage() {
 
     loadData();
     return () => { isMounted = false; };
-  }, [filterTag, currentPage, sortBy]);
+  }, [filterTag, currentPage, sortBy, timeframe, calendarDate]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('page', newPage.toString());
     if (sortBy && sortBy !== 'newest') nextParams.set('sort', sortBy);
+    if (timeframe && timeframe !== 'all') nextParams.set('timeframe', timeframe);
+    if (calendarDate) nextParams.set('date', calendarDate);
     setSearchParams(nextParams);
     window.scrollTo({ top: 350, behavior: 'smooth' });
   };
@@ -188,10 +245,48 @@ export default function BusinessPage() {
     } else {
       nextParams.set('sort', newSort);
     }
+    if (timeframe && timeframe !== 'all') nextParams.set('timeframe', timeframe);
+    if (calendarDate) nextParams.set('date', calendarDate);
     setSearchParams(nextParams);
   };
 
-  const isUsingFallback = articles.length === 0 && !filterTag;
+  const handleTimeframeChange = (e) => {
+    const newTf = e.target.value;
+    setTimeframe(newTf);
+    setCurrentPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', '1');
+    if (newTf === 'all') {
+      nextParams.delete('timeframe');
+    } else {
+      nextParams.set('timeframe', newTf);
+      nextParams.delete('date');
+      setCalendarDate('');
+    }
+    if (sortBy && sortBy !== 'newest') nextParams.set('sort', sortBy);
+    setSearchParams(nextParams);
+  };
+
+  const handleCalendarDateChange = (e) => {
+    const newDate = e.target.value;
+    setCalendarDate(newDate);
+    setCurrentPage(1);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('page', '1');
+    if (newDate) {
+      nextParams.set('date', newDate);
+      nextParams.delete('timeframe');
+      setTimeframe('all');
+    } else {
+      nextParams.delete('date');
+    }
+    if (sortBy && sortBy !== 'newest') {
+      nextParams.set('sort', sortBy);
+    }
+    setSearchParams(nextParams);
+  };
+
+  const isUsingFallback = articles.length === 0 && !filterTag && !calendarDate && timeframe === 'all';
   const displayedArticles = articles.length > 0
     ? articles
     : isUsingFallback
@@ -226,32 +321,110 @@ export default function BusinessPage() {
               {/* Left Column: 8 cols (Single-column stream of blog-standard-card) */}
               <div className="lg:col-span-8">
                 {/* Professional Filter & Sort Toolbar */}
-                <div className="mb-8 pb-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="mb-6 pb-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="text-sm text-gray-500 font-medium">
                     Showing <span className="text-gray-900 font-semibold">{effectiveTotalCount > 0 ? (currentPage - 1) * CARDS_PER_PAGE + 1 : 0}</span>–
                     <span className="text-gray-900 font-semibold">{Math.min(currentPage * CARDS_PER_PAGE, effectiveTotalCount)}</span> of{' '}
                     <span className="text-gray-900 font-bold">{effectiveTotalCount}</span> stories
                   </div>
 
-                  <div className="flex items-center gap-2.5 self-start sm:self-auto">
-                    <label htmlFor="sortSelectBus" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
-                      <i className="bi bi-sort-down text-sm text-[#ff4c60]"></i>
-                      Sort by:
-                    </label>
-                    <select
-                      id="sortSelectBus"
-                      value={sortBy}
-                      onChange={handleSortChange}
-                      className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="popular">Most Popular / Viewed</option>
-                      <option value="likes">Most Liked</option>
-                      <option value="comments">Most Commented</option>
-                      <option value="oldest">Oldest First</option>
-                    </select>
+                  <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+                    {/* Interactive Calendar Date Picker */}
+                    <div className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1.5 focus-within:border-[#ff4c60] focus-within:ring-2 focus-within:ring-[#ff4c60]/10 transition">
+                      <i className="bi bi-calendar-event text-sm text-[#ff4c60]"></i>
+                      <label htmlFor="calendarDateInputBus" className="text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hidden sm:inline">
+                        Calendar:
+                      </label>
+                      <input
+                        id="calendarDateInputBus"
+                        type="date"
+                        value={calendarDate}
+                        onChange={handleCalendarDateChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-transparent outline-none cursor-pointer"
+                        title="Pick an exact date from the calendar"
+                      />
+                      {calendarDate && (
+                        <button
+                          type="button"
+                          onClick={() => handleCalendarDateChange({ target: { value: '' } })}
+                          className="text-gray-400 hover:text-red-500 text-xs cursor-pointer ml-0.5"
+                          title="Clear calendar date"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Time / Date Filter Presets */}
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="timeframeSelectBus" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
+                        <i className="bi bi-calendar3 text-sm text-[#ff4c60]"></i>
+                        Presets:
+                      </label>
+                      <select
+                        id="timeframeSelectBus"
+                        value={timeframe}
+                        onChange={handleTimeframeChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
+                      >
+                        <option value="all">All Dates (Anytime)</option>
+                        <option value="today">Today (Last 24 Hours)</option>
+                        <option value="7d">Last 7 Days (Past Week)</option>
+                        <option value="10d">Last 10 Days</option>
+                        <option value="30d">Last 30 Days (Past Month)</option>
+                        <option value="older_30d">Older than 1 Month</option>
+                        <option value="older_90d">Older than 3 Months</option>
+                      </select>
+                    </div>
+
+                    {/* Sort Filter */}
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="sortSelectBus" className="text-xs uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1.5">
+                        <i className="bi bi-sort-down text-sm text-[#ff4c60]"></i>
+                        Sort:
+                      </label>
+                      <select
+                        id="sortSelectBus"
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#ff4c60] focus:ring-2 focus:ring-[#ff4c60]/10 transition cursor-pointer"
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="popular">Most Popular / Viewed</option>
+                        <option value="likes">Most Liked</option>
+                        <option value="comments">Most Commented</option>
+                        <option value="oldest">Oldest First</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
+
+                {/* Active Calendar Date Notification Badge */}
+                {calendarDate && (
+                  <div className="mb-6 flex items-center justify-between bg-red-50/70 border border-red-200/80 rounded-xl px-4 py-2.5 text-xs text-red-900 font-medium">
+                    <div className="flex items-center gap-2">
+                      <i className="bi bi-calendar-check-fill text-[#ff4c60] text-sm"></i>
+                      <span>
+                        Showing articles published on{' '}
+                        <strong className="font-bold underline">
+                          {new Date(calendarDate + 'T00:00:00').toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCalendarDateChange({ target: { value: '' } })}
+                      className="inline-flex items-center gap-1 text-[#ff4c60] hover:text-[#d9384b] font-bold text-xs uppercase tracking-wider bg-white px-2.5 py-1 rounded-md border border-red-200 shadow-xs cursor-pointer transition hover:bg-red-50"
+                    >
+                      Clear Date ✕
+                    </button>
+                  </div>
+                )}
 
                 {loading ? (
                   <div className="py-20 text-center">
@@ -267,15 +440,31 @@ export default function BusinessPage() {
                       No Business Articles Found
                     </h3>
                     <p className="text-gray-500 max-w-md mx-auto text-sm mb-6 leading-relaxed">
-                      {filterTag ? `No business articles currently tagged with #${filterTag}.` : 'No business stories found in this section.'}
+                      {calendarDate
+                        ? `No business stories published on ${new Date(calendarDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.`
+                        : filterTag
+                        ? `No business articles currently tagged with #${filterTag}.`
+                        : 'No business stories found in this section.'}
                     </p>
-                    <Link
-                      to="/business"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition"
-                    >
-                      <i className="bi bi-arrow-left"></i>
-                      <span>View All Business News</span>
-                    </Link>
+                    <div className="flex items-center justify-center gap-3">
+                      {calendarDate && (
+                        <button
+                          type="button"
+                          onClick={() => handleCalendarDateChange({ target: { value: '' } })}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer"
+                        >
+                          <i className="bi bi-x-circle"></i>
+                          <span>Clear Calendar Date</span>
+                        </button>
+                      )}
+                      <Link
+                        to="/business"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition"
+                      >
+                        <i className="bi bi-arrow-left"></i>
+                        <span>View All Business News</span>
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <div>

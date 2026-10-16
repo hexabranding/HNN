@@ -1,7 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import { fetchApi, formatImageUrl } from '../../services/api';
+
+/**
+ * Splits article content so 2-4 sentences / initial paragraph can appear
+ * between the Featured Image and an embedded Video Player or Media.
+ * Preserves all rich HTML tags (b, strong, i, u, links, headings) without stripping.
+ */
+function splitContentForMedia(htmlOrText) {
+  if (!htmlOrText || typeof htmlOrText !== 'string') {
+    return { intro: '', rest: '' };
+  }
+
+  // 1. If HTML contains paragraph or block tags (<p>, <div>, <blockquote>, <h...>)
+  const blocks = htmlOrText.match(/<(p|div|blockquote|h[1-6])[\s\S]*?<\/\1>/gi);
+  if (blocks && blocks.length > 1) {
+    const firstBlockText = blocks[0].replace(/<[^>]+>/g, '').trim();
+    const takeCount = firstBlockText.length < 90 && blocks.length > 2 ? 2 : 1;
+    const lastBlock = blocks[takeCount - 1];
+    const lastIdx = htmlOrText.indexOf(lastBlock);
+    const cutoff = lastIdx !== -1 ? lastIdx + lastBlock.length : 0;
+    return {
+      intro: htmlOrText.slice(0, cutoff).trim(),
+      rest: htmlOrText.slice(cutoff).trim(),
+    };
+  }
+
+  // 2. Single block or raw markup: return full content as intro so rich formatting is completely preserved
+  return {
+    intro: htmlOrText,
+    rest: '',
+  };
+}
 
 export default function PostDetailPage() {
   const { slug: routeSlug } = useParams();
@@ -42,7 +73,7 @@ export default function PostDetailPage() {
 
     async function loadArticle() {
       try {
-        const data = await fetchApi(`/news/${activeSlug}`);
+        const data = await fetchApi(`/news/${activeSlug}`, { skipCache: true });
         if (data && data.title) {
           setArticle(data);
           // Increment view count in backend
@@ -79,6 +110,12 @@ export default function PostDetailPage() {
     }
 
     loadArticle();
+
+    const handleNewsUpdate = () => {
+      loadArticle();
+    };
+    window.addEventListener('hexa_news_updated', handleNewsUpdate);
+    return () => window.removeEventListener('hexa_news_updated', handleNewsUpdate);
   }, [activeSlug]);
 
   const current = article || defaultArticle;
@@ -202,6 +239,31 @@ export default function PostDetailPage() {
     };
   }, [current, featuredImg]);
 
+  // Extract 2-4 sentences / intro section to place between image and video
+  const contentParts = useMemo(() => {
+    if (!current) return { intro: '', rest: '' };
+
+    if (current.content) {
+      return splitContentForMedia(current.content);
+    }
+
+    // Fallback: lead text or first paragraph
+    const leadText =
+      current.lead ||
+      current.excerpt ||
+      (current.paragraphs && current.paragraphs[0]) ||
+      defaultArticle.paragraphs[0];
+
+    const restParagraphs = current.lead
+      ? (current.paragraphs || defaultArticle.paragraphs)
+      : (current.paragraphs || defaultArticle.paragraphs).slice(1);
+
+    return {
+      intro: `<p>${leadText}</p>`,
+      restParagraphs,
+    };
+  }, [current]);
+
   return (
     <div className="w-full bg-[#fdfbf7]/30 min-h-screen py-6 sm:py-8">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -269,8 +331,18 @@ export default function PostDetailPage() {
                 </div>
               )}
 
-                {/* Video Player (if videoUrl is present) */}
-                {current.videoUrl && (
+              {/* When Video Player is present: place 2-4 sentences from content between Image and Video */}
+              {current.videoUrl ? (
+                <>
+                  {/* 2 to 4 sentences from content between Featured Image and Video Player */}
+                  {contentParts.intro && (
+                    <div
+                      className="text-gray-850 text-base sm:text-[18px] leading-[1.85] my-6 sm:my-8 space-y-4 article-html-content font-serif [&_p]:mb-4 [&_p]:leading-[1.85] [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
+                      dangerouslySetInnerHTML={{ __html: contentParts.intro }}
+                    />
+                  )}
+
+                  {/* Video Player */}
                   <div className="mb-8 rounded-2xl overflow-hidden shadow-md aspect-video bg-black">
                     {current.videoUrl.includes('youtube.com') || current.videoUrl.includes('youtu.be') ? (
                       <iframe
@@ -288,28 +360,49 @@ export default function PostDetailPage() {
                       <video src={current.videoUrl} controls className="w-full h-full object-contain" />
                     )}
                   </div>
-                )}
 
-                {/* Photo Gallery (if gallery images present) */}
-                {current.gallery && current.gallery.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Photo Gallery</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {current.gallery.map((gImg, gIdx) => (
-                        <div key={gIdx} className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 shadow-sm border border-gray-200">
-                          <img
-                            src={formatImageUrl(gImg)}
-                            alt={`Gallery ${gIdx + 1}`}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
+                  {/* Remaining Article Content after Video Player */}
+                  {contentParts.rest ? (
+                    <div
+                      className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
+                      dangerouslySetInnerHTML={{ __html: contentParts.rest }}
+                    />
+                  ) : contentParts.restParagraphs && contentParts.restParagraphs.length > 0 ? (
+                    <>
+                      {contentParts.restParagraphs.map((p, idx) => (
+                        <p key={idx} className="text-gray-700 text-base sm:text-[17px] leading-[1.8] mb-6">
+                          {p}
+                        </p>
                       ))}
-                    </div>
-                  </div>
-                )}
+
+                      {/* Blockquote matching post-blockquote in style.css */}
+                      <blockquote
+                        style={{ borderLeftColor: themeColor }}
+                        className="bg-[#f2f2de] border-l-4 p-7 sm:p-9 rounded-r-lg my-8 relative"
+                      >
+                        <i
+                          className="bi bi-quote text-4xl leading-none block mb-2 opacity-40"
+                          style={{ color: themeColor }}
+                        ></i>
+                        <p className="font-['Prompt',sans-serif] text-lg sm:text-xl italic text-gray-900 leading-relaxed mb-3">
+                          "{current.quote || defaultArticle.quote}"
+                        </p>
+                        <cite
+                          style={{ color: themeColor }}
+                          className="not-italic text-sm font-semibold block"
+                        >
+                          — {current.quoteAuthor || defaultArticle.quoteAuthor}
+                        </cite>
+                      </blockquote>
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                <>
+
                   {current.content ? (
                     <div
-                      className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full"
+                      className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
                       dangerouslySetInnerHTML={{ __html: current.content }}
                     />
                   ) : (
@@ -347,6 +440,8 @@ export default function PostDetailPage() {
                       </blockquote>
                     </>
                   )}
+                </>
+              )}
 
                   {/* Post Tags & Share row matching style.css lines 2106-2150 */}
                   <div className="py-6 border-y border-gray-200 flex flex-wrap items-center justify-between gap-4 my-10">

@@ -80,7 +80,7 @@ function sanitizeGallery(input) {
  * @access  Public
  */
 const getNews = asyncHandler(async (req, res) => {
-  const { category, subcategory, featured, breaking, limit = 50, page = 1, search, sort, author, tag } = req.query;
+  const { category, subcategory, featured, breaking, limit = 50, page = 1, search, sort, author, tag, timeframe, dateFilter, startDate, endDate, date: exactDate } = req.query;
   const isAdmin = req.headers.authorization?.startsWith("Bearer ");
   const maxLimit = isAdmin ? 2000 : 1000;
   const lim = Math.min(Math.max(parseInt(limit, 10) || 50, 1), maxLimit);
@@ -89,6 +89,7 @@ const getNews = asyncHandler(async (req, res) => {
   const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const filter = {};
+  const orGroups = [];
   if (subcategory) filter.subcategory = subcategory;
   if (featured !== undefined) filter.featured = featured === "true";
   if (breaking !== undefined) filter.breaking = breaking === "true";
@@ -97,7 +98,79 @@ const getNews = asyncHandler(async (req, res) => {
   }
   if (!isAdmin) filter.published = true;
 
-  const orGroups = [];
+  // Calendar Date Filtering (Exact Day, Date Range, or Presets)
+  if (exactDate) {
+    const cleanDate = String(exactDate).trim();
+    const targetDate = new Date(cleanDate);
+    if (!isNaN(targetDate.getTime())) {
+      // Create local day range and UTC range to cover all server & client timezones
+      const startOfDay = new Date(new Date(cleanDate).setUTCHours(0, 0, 0, 0) - 14 * 3600000);
+      const endOfDay = new Date(new Date(cleanDate).setUTCHours(23, 59, 59, 999) + 14 * 3600000);
+
+      const formattedLong = targetDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      const formattedShort = targetDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+      orGroups.push({
+        $or: [
+          { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+          { date: { $regex: escapeRegExp(cleanDate), $options: "i" } },
+          { date: { $regex: escapeRegExp(formattedLong), $options: "i" } },
+          { date: { $regex: escapeRegExp(formattedShort), $options: "i" } },
+        ],
+      });
+    }
+  } else if (startDate || endDate) {
+    const dateRange = {};
+    if (startDate) {
+      const s = new Date(startDate);
+      if (!isNaN(s.getTime())) dateRange.$gte = new Date(s.setUTCHours(0, 0, 0, 0) - 14 * 3600000);
+    }
+    if (endDate) {
+      const e = new Date(endDate);
+      if (!isNaN(e.getTime())) dateRange.$lte = new Date(e.setUTCHours(23, 59, 59, 999) + 14 * 3600000);
+    }
+    if (Object.keys(dateRange).length > 0) {
+      filter.createdAt = dateRange;
+    }
+  } else {
+    // Relative Presets
+    const activeTimeframe = timeframe || dateFilter;
+    if (activeTimeframe && activeTimeframe !== "all" && activeTimeframe !== "ALL") {
+      const now = Date.now();
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      switch (String(activeTimeframe).toLowerCase().trim()) {
+        case "today":
+        case "1d":
+        case "24h":
+          filter.createdAt = { $gte: new Date(now - DAY_MS) };
+          break;
+        case "7d":
+        case "week":
+          filter.createdAt = { $gte: new Date(now - 7 * DAY_MS) };
+          break;
+        case "10d":
+          filter.createdAt = { $gte: new Date(now - 10 * DAY_MS) };
+          break;
+        case "30d":
+        case "month":
+        case "1m":
+          filter.createdAt = { $gte: new Date(now - 30 * DAY_MS) };
+          break;
+        case "older_30d":
+        case "1m_plus":
+        case "month_old":
+          filter.createdAt = { $lt: new Date(now - 30 * DAY_MS) };
+          break;
+        case "older_90d":
+        case "3m_plus":
+          filter.createdAt = { $lt: new Date(now - 90 * DAY_MS) };
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   if (category) {
     const rawCats = String(category).split(",").map((s) => s.trim()).filter(Boolean);
     const allSearchTerms = new Set(rawCats);

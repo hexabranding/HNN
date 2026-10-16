@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useOutletContext, useLocation, useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, useOutletContext, useLocation, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import HtmlEditor from '../admin/HtmlEditor';
 import Pagination from '../common/Pagination';
-import { formatImageUrl, handleImageError } from '../../services/api';
+import { formatImageUrl, handleImageError, clearApiCache } from '../../services/api';
 
 export default function NewsManagementView({ mode = 'admin', defaultEditor = false }) {
   const context = useOutletContext() || {};
@@ -30,21 +30,150 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
   const location = useLocation();
   const navigate = useNavigate();
   const { id: routeArticleId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Articles source
   const sourceArticles = articles.length > 0 ? articles : allArticles;
 
+  // Initialize filters & pagination directly from URL search params (Industry Standard)
+  const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const searchFromUrl = searchParams.get('search') || '';
+  const categoryFromUrl = searchParams.get('category') || 'ALL';
+  const dateFilterFromUrl = searchParams.get('timeframe') || searchParams.get('dateFilter') || 'ALL';
+  const calendarDateFromUrl = searchParams.get('date') || '';
+  const scopeFromUrl = searchParams.get('scope') || (isAuthorMode ? 'my' : 'all');
+
   // Author filter mode: 'my' (My stories) or 'all' (All publication stories)
-  const [authorFilterScope, setAuthorFilterScope] = useState('my');
+  const [authorFilterScope, setAuthorFilterScope] = useState(scopeFromUrl);
 
   // View state: 'list' (cards grid) or 'editor' (in-page form)
   const [newsView, setNewsView] = useState(defaultEditor || routeArticleId ? 'editor' : 'list');
   const [editingArticleId, setEditingArticleId] = useState(routeArticleId || null);
-  const [galleryInput, setGalleryInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(searchFromUrl);
+  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
+  const [dateFilter, setDateFilter] = useState(dateFilterFromUrl);
+  const [calendarDate, setCalendarDate] = useState(calendarDateFromUrl);
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const CARDS_PER_PAGE = 10;
+
+  // Centralized URL parameter synchronization helper
+  const updateUrlParams = useCallback((updates) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (
+        value === undefined ||
+        value === null ||
+        value === '' ||
+        value === 'ALL' ||
+        (key === 'page' && (Number(value) <= 1 || isNaN(Number(value)))) ||
+        (key === 'scope' && value === (isAuthorMode ? 'my' : 'all'))
+      ) {
+        nextParams.delete(key);
+      } else {
+        nextParams.set(key, String(value));
+      }
+    });
+
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, isAuthorMode, setSearchParams]);
+
+  // Sync state if browser Back / Forward buttons are clicked
+  useEffect(() => {
+    const p = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const s = searchParams.get('search') || '';
+    const cat = searchParams.get('category') || 'ALL';
+    const tf = searchParams.get('timeframe') || searchParams.get('dateFilter') || 'ALL';
+    const cd = searchParams.get('date') || '';
+    const sc = searchParams.get('scope') || (isAuthorMode ? 'my' : 'all');
+
+    if (p !== currentPage) setCurrentPage(p);
+    if (s !== searchQuery) setSearchQuery(s);
+    if (cat !== selectedCategory) setSelectedCategory(cat);
+    if (tf !== dateFilter) setDateFilter(tf);
+    if (cd !== calendarDate) setCalendarDate(cd);
+    if (sc !== authorFilterScope) setAuthorFilterScope(sc);
+  }, [searchParams]);
+
+  // Debounced Search Sync to URL (updates search param smoothly without lagging user typing)
+  const isFirstSearchRender = useRef(true);
+  useEffect(() => {
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      const currentParam = searchParams.get('search') || '';
+      if (searchQuery !== currentParam) {
+        updateUrlParams({ search: searchQuery, page: 1 });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+    updateUrlParams({ category: cat, page: 1 });
+  };
+
+  const handleCalendarDateChange = (val) => {
+    setCalendarDate(val);
+    setCurrentPage(1);
+    if (val) {
+      setDateFilter('ALL');
+      updateUrlParams({ date: val, timeframe: 'ALL', page: 1 });
+    } else {
+      updateUrlParams({ date: '', page: 1 });
+    }
+  };
+
+  const handleDateFilterChange = (val) => {
+    setDateFilter(val);
+    setCurrentPage(1);
+    if (val !== 'ALL') {
+      setCalendarDate('');
+      updateUrlParams({ timeframe: val, date: '', page: 1 });
+    } else {
+      updateUrlParams({ timeframe: 'ALL', page: 1 });
+    }
+  };
+
+  const handleAuthorScopeChange = (scope) => {
+    setAuthorFilterScope(scope);
+    setCurrentPage(1);
+    updateUrlParams({ scope, page: 1 });
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    updateUrlParams({ page: newPage });
+    const anchor = document.getElementById('news-management-top');
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('ALL');
+    setDateFilter('ALL');
+    setCalendarDate('');
+    setCurrentPage(1);
+    updateUrlParams({
+      search: '',
+      category: 'ALL',
+      timeframe: 'ALL',
+      date: '',
+      page: 1,
+    });
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setCurrentPage(1);
+    updateUrlParams({ search: '', page: 1 });
+  };
 
   // Article Form State
   const defaultAuthorName = isAuthorMode
@@ -100,7 +229,6 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
 
   const populateArticleForm = (art) => {
     setEditingArticleId(art._id || art.slug);
-    setGalleryInput('');
     setArtForm({
       title: art.title || '',
       titleEn: art.titleEn || '',
@@ -131,7 +259,6 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
 
   const openNewArticleModal = () => {
     setEditingArticleId(null);
-    setGalleryInput('');
     setArtForm({
       title: '',
       titleEn: '',
@@ -165,9 +292,8 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
     setNewsView('list');
     setEditingArticleId(null);
     const basePath = isAuthorMode ? '/author-dashboard/news' : '/admin/news';
-    if (routeArticleId || defaultEditor) {
-      navigate(basePath);
-    }
+    const qs = searchParams.toString();
+    navigate({ pathname: basePath, search: qs ? `?${qs}` : '' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -210,6 +336,9 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
       }
 
       showToast(editingArticleId ? 'Article updated successfully!' : 'Article published successfully!', 'success');
+      // Invalidate API caches so updates reflect immediately on all public pages
+      clearApiCache();
+      window.dispatchEvent(new Event('hexa_news_updated'));
       closeEditor();
       refreshData();
     } catch (err) {
@@ -243,34 +372,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
     }
   };
 
-  const handleGalleryFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const res = await fetch('/api/upload/image', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setArtForm((prev) => ({
-          ...prev,
-          gallery: [...(prev.gallery || []), data.url],
-        }));
-        showToast('Gallery image added!', 'success');
-      } else {
-        throw new Error(data.error || 'Upload failed');
-      }
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
 
   const handleDeleteArticle = async (idOrSlug) => {
     if (!window.confirm('Are you sure you want to delete this article?')) return;
@@ -281,6 +383,8 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
       });
       if (res.ok) {
         showToast('Article deleted successfully', 'success');
+        clearApiCache();
+        window.dispatchEvent(new Event('hexa_news_updated'));
         refreshData();
       } else {
         throw new Error('Failed to delete article');
@@ -316,7 +420,46 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
       a.categoryMl?.toLowerCase() === selectedCategory.toLowerCase() ||
       (Array.isArray(a.categories) && a.categories.some((c) => c.toLowerCase() === selectedCategory.toLowerCase()));
 
-    return matchesSearch && matchesCategory;
+    const matchesDate = (() => {
+      if (dateFilter === 'ALL' || !dateFilter) return true;
+      const rawDate = a.createdAt || a.date || a.updatedAt;
+      if (!rawDate) return true;
+      const articleDate = new Date(rawDate);
+      if (isNaN(articleDate.getTime())) return true;
+      const diffDays = (Date.now() - articleDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      switch (dateFilter) {
+        case 'today':
+          return diffDays <= 1;
+        case '7d':
+          return diffDays <= 7;
+        case '10d':
+          return diffDays <= 10;
+        case '30d':
+          return diffDays <= 30;
+        case 'older_30d':
+          return diffDays > 30;
+        case 'older_90d':
+          return diffDays > 90;
+        default:
+          return true;
+      }
+    })();
+
+    const matchesCalendarDate = (() => {
+      if (!calendarDate) return true;
+      const rawDate = a.createdAt || a.date || a.updatedAt;
+      if (!rawDate) return false;
+      const articleDate = new Date(rawDate);
+      if (isNaN(articleDate.getTime())) {
+        return typeof a.date === 'string' && a.date.includes(calendarDate);
+      }
+      const isoDate = articleDate.toISOString().split('T')[0];
+      const localDate = `${articleDate.getFullYear()}-${String(articleDate.getMonth() + 1).padStart(2, '0')}-${String(articleDate.getDate()).padStart(2, '0')}`;
+      return isoDate === calendarDate || localDate === calendarDate || (typeof a.date === 'string' && a.date.includes(calendarDate));
+    })();
+
+    return matchesSearch && matchesCategory && matchesDate && matchesCalendarDate;
   });
 
   // Pagination
@@ -329,16 +472,13 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
   const featuredCount = filteredArticles.filter((a) => a.featured === true).length;
   const totalViewsSum = filteredArticles.reduce((acc, curr) => acc + (curr.views || 0), 0);
 
-  // Reset to first page on search or category filter change
+  // Keep page clamped within bounds when dataset shrinks
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory, authorFilterScope]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
+    if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages);
+      updateUrlParams({ page: totalPages });
     }
-  }, [totalPages, currentPage]);
+  }, [totalPages, currentPage, updateUrlParams]);
 
   return (
     <div className="space-y-6">
@@ -366,7 +506,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
               <div className="inline-flex p-1 bg-white border border-[#e0e0e0] rounded-xl shadow-sm">
                 <button
                   type="button"
-                  onClick={() => setAuthorFilterScope('my')}
+                  onClick={() => handleAuthorScopeChange('my')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                     authorFilterScope === 'my'
                       ? 'bg-[#c91f26] text-white shadow-sm'
@@ -377,7 +517,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAuthorFilterScope('all')}
+                  onClick={() => handleAuthorScopeChange('all')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                     authorFilterScope === 'all'
                       ? 'bg-[#c91f26] text-white shadow-sm'
@@ -618,104 +758,18 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                   )}
                 </div>
 
-                {/* Gallery Images */}
+                {/* Video URL */}
                 <div>
                   <label className="block text-[13px] font-semibold text-[#444444] mb-1.5">
-                    Gallery Images (multiple)
+                    Video URL <span className="text-xs text-[#888888] font-normal">(optional — YouTube, Vimeo)</span>
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={galleryInput}
-                      onChange={(e) => setGalleryInput(e.target.value)}
-                      placeholder="Image URL"
-                      className="flex-1 px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (galleryInput.trim()) {
-                          setArtForm({
-                            ...artForm,
-                            gallery: [...(artForm.gallery || []), galleryInput.trim()],
-                          });
-                          setGalleryInput('');
-                        }
-                      }}
-                      className="px-4 py-2.5 bg-[#e5e5e5] hover:bg-[#d8d8d8] text-[#333333] text-xs font-semibold rounded-lg transition"
-                    >
-                      + Add URL
-                    </button>
-                    <label className="px-4 py-2.5 bg-[#064e3b] hover:bg-[#043d2e] text-white text-xs font-semibold rounded-lg cursor-pointer transition flex items-center gap-1.5 shadow-sm">
-                      <i className="bi bi-upload"></i>
-                      <span>Upload</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleGalleryFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  {artForm.gallery && artForm.gallery.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2.5">
-                      {artForm.gallery.map((gUrl, gIdx) => (
-                        <div key={gIdx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#d1d5db] group">
-                          <img
-                            src={formatImageUrl(gUrl)}
-                            alt={`Gallery ${gIdx}`}
-                            onError={(e) => handleImageError(e)}
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setArtForm({
-                                ...artForm,
-                                gallery: artForm.gallery.filter((_, idx) => idx !== gIdx),
-                              });
-                            }}
-                            className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] transition"
-                            title="Remove image"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Media Type & Video URL */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444444] mb-1.5">
-                      Media Type
-                    </label>
-                    <select
-                      value={artForm.media || 'standard'}
-                      onChange={(e) => setArtForm({ ...artForm, media: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
-                    >
-                      <option value="standard">Standard</option>
-                      <option value="video">Video</option>
-                      <option value="gallery">Gallery</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444444] mb-1.5">
-                      Video URL (YouTube, Vimeo)
-                    </label>
-                    <input
-                      type="text"
-                      value={artForm.videoUrl || ''}
-                      onChange={(e) => setArtForm({ ...artForm, videoUrl: e.target.value })}
-                      placeholder="Paste video link..."
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={artForm.videoUrl || ''}
+                    onChange={(e) => setArtForm({ ...artForm, videoUrl: e.target.value })}
+                    placeholder="Paste video link (e.g. https://www.youtube.com/watch?v=...)"
+                    className="w-full px-3.5 py-2.5 bg-white border border-[#d1d5db] rounded-lg text-sm text-[#111111] outline-none focus:border-[#c91f26] focus:ring-1 focus:ring-[#c91f26] transition"
+                  />
                 </div>
 
                 {/* Featured Story Checkbox */}
@@ -803,33 +857,36 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
         /* VIEW 2: 10-CARD GRID DASHBOARD VIEW */
         <>
           {/* Search, Category Filter, and Add Button */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-            <div className="relative flex-1 w-full">
+          <div className="flex flex-col sm:flex-row flex-wrap xl:flex-nowrap items-stretch sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-[#e2e8f0] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            {/* Search Bar (Expanded width) */}
+            <div className="relative flex-1 min-w-[200px] sm:min-w-[260px] md:min-w-[320px] lg:min-w-[380px] w-full">
               <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] text-sm"></i>
               <input
                 type="text"
                 placeholder={isAuthorMode ? 'Search my stories...' : 'Search news articles...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm text-[#0f172a] placeholder-[#94a3b8] outline-none focus:border-[#c91f26] focus:bg-white transition"
+                className="w-full pl-11 pr-10 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm text-[#0f172a] placeholder-[#94a3b8] outline-none focus:border-[#c91f26] focus:bg-white transition"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={handleClearSearch}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#475569] text-sm cursor-pointer"
+                  title="Clear search"
                 >
                   <i className="bi bi-x-circle-fill"></i>
                 </button>
               )}
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <i className="bi bi-funnel absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-sm pointer-events-none"></i>
+            {/* Category Filter Dropdown (Decreased size) */}
+            <div className="relative w-full sm:w-36 md:w-40 shrink-0">
+              <i className="bi bi-funnel absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-sm font-medium text-[#334155] outline-none focus:border-[#c91f26] focus:bg-white appearance-none cursor-pointer transition"
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full pl-8 pr-7 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-sm font-medium text-[#334155] outline-none focus:border-[#c91f26] focus:bg-white appearance-none cursor-pointer transition truncate"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map((cat, idx) => {
@@ -852,13 +909,58 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
                   );
                 })}
               </select>
-              <i className="bi bi-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
+              <i className="bi bi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
+            </div>
+
+            {/* Calendar Date Picker */}
+            <div className="relative flex items-center gap-1.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-2.5 py-2 text-sm focus-within:border-[#c91f26] focus-within:bg-white transition w-full sm:w-auto shrink-0">
+              <i className="bi bi-calendar-event text-[#c91f26] text-sm pointer-events-none"></i>
+              <label htmlFor="adminCalendarDate" className="text-xs font-semibold text-[#64748b] hidden sm:inline cursor-pointer">
+                Calendar:
+              </label>
+              <input
+                id="adminCalendarDate"
+                type="date"
+                value={calendarDate}
+                onChange={(e) => handleCalendarDateChange(e.target.value)}
+                className="text-xs sm:text-sm font-semibold text-[#334155] bg-transparent outline-none cursor-pointer"
+                title="Filter by specific calendar date"
+              />
+              {calendarDate && (
+                <button
+                  type="button"
+                  onClick={() => handleCalendarDateChange('')}
+                  className="text-[#94a3b8] hover:text-[#c91f26] text-xs cursor-pointer p-0.5"
+                  title="Clear calendar date"
+                >
+                  <i className="bi bi-x-circle-fill"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Date / Age Filter Dropdown */}
+            <div className="relative w-full sm:w-36 md:w-40 shrink-0">
+              <i className="bi bi-calendar3 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
+              <select
+                value={dateFilter}
+                onChange={(e) => handleDateFilterChange(e.target.value)}
+                className="w-full pl-8 pr-7 py-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-sm font-medium text-[#334155] outline-none focus:border-[#c91f26] focus:bg-white appearance-none cursor-pointer transition truncate"
+              >
+                <option value="ALL">Presets (Anytime)</option>
+                <option value="today">Today (Last 24h)</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="10d">Last 10 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="older_30d">&gt; 1 Month</option>
+                <option value="older_90d">&gt; 3 Months</option>
+              </select>
+              <i className="bi bi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94a3b8] text-xs pointer-events-none"></i>
             </div>
 
             <button
               type="button"
               onClick={openNewArticleModal}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+              className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
             >
               <i className="bi bi-plus-lg font-bold"></i>
               <span>{isAuthorMode ? 'Write Story' : 'Add News'}</span>
@@ -873,14 +975,14 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
               </div>
               <h4 className="text-base font-bold text-[#0f172a] mb-1">No news articles found</h4>
               <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-6">
-                {searchQuery || selectedCategory !== 'ALL'
+                {searchQuery || selectedCategory !== 'ALL' || dateFilter !== 'ALL' || calendarDate
                   ? 'No articles match your current search or category filters. Try clearing filters.'
                   : (isAuthorMode ? 'You have not written any stories yet. Start drafting your first article!' : 'Get started by creating your first article.')}
               </p>
-              {searchQuery || selectedCategory !== 'ALL' ? (
+              {searchQuery || selectedCategory !== 'ALL' || dateFilter !== 'ALL' || calendarDate ? (
                 <button
                   type="button"
-                  onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
+                  onClick={handleClearAllFilters}
                   className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#334155] text-xs font-semibold rounded-lg transition cursor-pointer"
                 >
                   Clear Filters
@@ -1021,13 +1123,7 @@ export default function NewsManagementView({ mode = 'admin', defaultEditor = fal
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={(page) => {
-                setCurrentPage(page);
-                const anchor = document.getElementById('news-management-top');
-                if (anchor) {
-                  anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
+              onPageChange={handlePageChange}
             />
           )}
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { formatImageUrl, handleImageError } from '../../services/api';
 
 const ROLE_OPTIONS = [
@@ -14,12 +14,53 @@ const ROLE_OPTIONS = [
 
 export default function AdminAuthorsPage() {
   const { authors, token, loadDashboardData, showToast } = useOutletContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchFromUrl = searchParams.get('search') || '';
 
   const [authorModalOpen, setAuthorModalOpen] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchFromUrl);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const updateAuthorUrlParams = useCallback((updates) => {
+    const nextParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value) {
+        nextParams.delete(key);
+      } else {
+        nextParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Sync state on browser back/forward
+  useEffect(() => {
+    const s = searchParams.get('search') || '';
+    if (s !== searchQuery) setSearchQuery(s);
+  }, [searchParams]);
+
+  // Debounced search sync
+  const isFirstAuthorSearch = useRef(true);
+  useEffect(() => {
+    if (isFirstAuthorSearch.current) {
+      isFirstAuthorSearch.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      const currentParam = searchParams.get('search') || '';
+      if (searchQuery !== currentParam) {
+        updateAuthorUrlParams({ search: searchQuery });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    updateAuthorUrlParams({ search: '' });
+  };
 
   const [authorForm, setAuthorForm] = useState({
     name: '',
@@ -227,8 +268,9 @@ export default function AdminAuthorsPage() {
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={handleClearSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#475569] text-sm cursor-pointer"
+              title="Clear search"
             >
               <i className="bi bi-x-circle-fill"></i>
             </button>
@@ -252,7 +294,7 @@ export default function AdminAuthorsPage() {
             {searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={handleClearSearch}
                 className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#334155] text-xs font-semibold rounded-lg transition cursor-pointer"
               >
                 Clear Search

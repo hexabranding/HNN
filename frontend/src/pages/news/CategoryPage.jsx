@@ -5,6 +5,7 @@ import BusinessPage from './BusinessPage';
 import { CATEGORY_PAGES_DATA } from '../../data/categoryData';
 import { fetchApi } from '../../services/api';
 import Pagination from '../../components/common/Pagination';
+import { ArticleGridSkeleton } from '../../components/common/Skeleton';
 
 const ENTIRE_TOPIC_CATEGORIES = [
   {
@@ -513,10 +514,7 @@ export default function CategoryPage({ category: propCategory, isRegional: propI
                 )}
 
                 {loadingArticles ? (
-                  <div className="py-20 text-center">
-                    <div className="inline-block w-8 h-8 border-3 border-[#ff4c60] border-t-transparent rounded-full animate-spin mb-3"></div>
-                    <p className="text-sm text-gray-500 font-medium">Loading stories...</p>
-                  </div>
+                  <ArticleGridSkeleton count={6} />
                 ) : displayedArticles.length === 0 ? (
                   <div className="py-16 px-6 text-center bg-[#fafafa] rounded-2xl border border-dashed border-[#e2e8f0]">
                     <div className="w-16 h-16 mx-auto mb-4 bg-red-50 text-[#c91f26] rounded-full flex items-center justify-center text-2xl">

@@ -5,7 +5,7 @@ const categorySchema = new mongoose.Schema({
   label: { type: String, required: true },
   slug: { type: String, required: true, unique: true, index: true },
   titleMl: { type: String, default: "" },
-  parent: { type: String, default: null },
+  parent: { type: String, default: null, index: true },
   count: { type: Number, default: 0 },
 }, { timestamps: true });
 

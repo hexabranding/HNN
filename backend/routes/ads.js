@@ -1,5 +1,5 @@
 const express = require("express");
-const { authMiddleware } = require("../middleware/auth");
+const { authMiddleware, adminOnly } = require("../middleware/auth");
 const {
   getActiveAds,
   getAllAds,
@@ -14,13 +14,13 @@ const {
 const router = express.Router();
 
 router.get("/", getActiveAds);
-router.get("/all", authMiddleware, getAllAds);
+router.get("/all", authMiddleware, adminOnly, getAllAds);
 router.get("/slots", getAdSlots);
 router.get("/batch", getAdsBySlotsBatch);
 router.get("/:id", getAdByIdOrSlot);
 
-router.post("/", authMiddleware, createAd);
-router.put("/:id", authMiddleware, updateAd);
-router.delete("/:id", authMiddleware, deleteAd);
+router.post("/", authMiddleware, adminOnly, createAd);
+router.put("/:id", authMiddleware, adminOnly, updateAd);
+router.delete("/:id", authMiddleware, adminOnly, deleteAd);
 
 module.exports = router;

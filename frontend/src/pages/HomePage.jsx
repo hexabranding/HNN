@@ -10,6 +10,7 @@ import NewsletterSection from '../components/home/NewsletterSection';
 import SidebarEditorChoice from '../components/sidebars/SidebarEditorChoice';
 import AuthorBanner from '../components/sidebars/AuthorBanner';
 import { fetchApi } from '../services/api';
+import { HomePageSkeleton } from '../components/common/Skeleton';
 
 export default function HomePage() {
   const [featuredArticles, setFeaturedArticles] = useState([]);
@@ -48,6 +49,10 @@ export default function HomePage() {
 
     loadData();
   }, []);
+
+  if (loading) {
+    return <HomePageSkeleton />;
+  }
 
   return (
     <div className="w-full selection:bg-[#c91f26] selection:text-white">

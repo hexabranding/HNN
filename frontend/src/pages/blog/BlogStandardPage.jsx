@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import Pagination from '../../components/common/Pagination';
 import { fetchApi, formatImageUrl } from '../../services/api';
+import { ArticleGridSkeleton } from '../../components/common/Skeleton';
 
 const FALLBACK_POSTS = [
   {
@@ -234,10 +235,7 @@ export default function BlogStandardPage() {
               </div>
 
               {loading ? (
-                <div className="py-20 text-center">
-                  <div className="inline-block w-8 h-8 border-3 border-[#ff4c60] border-t-transparent rounded-full animate-spin mb-3"></div>
-                  <p className="text-sm text-gray-500 font-medium">Loading stories...</p>
-                </div>
+                <ArticleGridSkeleton count={6} />
               ) : displayedPosts.length === 0 ? (
                 <div className="py-16 px-6 text-center bg-[#fafafa] rounded-2xl border border-dashed border-[#e2e8f0]">
                   <div className="w-16 h-16 mx-auto mb-4 bg-red-50 text-[#c91f26] rounded-full flex items-center justify-center text-2xl">

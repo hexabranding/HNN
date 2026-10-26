@@ -227,11 +227,12 @@ const getNews = asyncHandler(async (req, res) => {
     });
   }
   if (search) {
+    const cleanSearch = escapeRegExp(String(search).trim());
     orGroups.push({
       $or: [
-        { title: { $regex: search, $options: "i" } },
-        { excerpt: { $regex: search, $options: "i" } },
-        { tags: { $regex: search, $options: "i" } },
+        { title: { $regex: cleanSearch, $options: "i" } },
+        { excerpt: { $regex: cleanSearch, $options: "i" } },
+        { tags: { $regex: cleanSearch, $options: "i" } },
       ],
     });
   }
@@ -450,6 +451,16 @@ const updateNews = asyncHandler(async (req, res) => {
   const existing = await Article.findOne(filter);
   if (!existing) return res.status(404).json({ error: "Article not found" });
 
+  if (req.user?.isAuthor) {
+    const isOwner =
+      existing.author &&
+      (existing.author.toLowerCase() === (req.user.name || "").toLowerCase() ||
+       existing.author.toLowerCase() === (req.user.username || "").toLowerCase());
+    if (!isOwner) {
+      return res.status(403).json({ error: "Access denied. Authors may only edit their own articles." });
+    }
+  }
+
   const requestedSlug = req.body.slug !== undefined ? req.body.slug : req.body.engSlug || "";
   const shouldUpdateSlug = requestedSlug || req.body.titleEn || req.body.title;
   let computedLegacy = null;
@@ -517,8 +528,20 @@ const deleteNews = asyncHandler(async (req, res) => {
     ? { _id: req.params.id }
     : { slug: req.params.id };
 
-  const article = await Article.findOneAndDelete(filter);
-  if (!article) return res.status(404).json({ error: "Article not found" });
+  const existing = await Article.findOne(filter);
+  if (!existing) return res.status(404).json({ error: "Article not found" });
+
+  if (req.user?.isAuthor) {
+    const isOwner =
+      existing.author &&
+      (existing.author.toLowerCase() === (req.user.name || "").toLowerCase() ||
+       existing.author.toLowerCase() === (req.user.username || "").toLowerCase());
+    if (!isOwner) {
+      return res.status(403).json({ error: "Access denied. Authors may only delete their own articles." });
+    }
+  }
+
+  await Article.deleteOne({ _id: existing._id });
 
   res.json({ message: "Article deleted" });
 });

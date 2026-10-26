@@ -1,11 +1,13 @@
 import React from 'react';
 
-export default function Preloader({ fullScreen = true }) {
+export default function Preloader({ fullScreen = true, fading = false }) {
   return (
     <div
       className={
         fullScreen
-          ? 'fixed inset-0 w-screen h-screen bg-white z-[999999] flex items-center justify-center transition-opacity duration-300'
+          ? `fixed inset-0 w-screen h-screen bg-white z-[999999] flex items-center justify-center transition-opacity duration-300 ease-out ${
+              fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`
           : 'w-full py-16 flex items-center justify-center'
       }
       aria-label="Loading..."

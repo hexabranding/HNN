@@ -84,8 +84,22 @@ function authMiddleware(req, res, next) {
   }
 }
 
+/**
+ * Administrator role authorization guard
+ */
+function adminOnly(req, res, next) {
+  if (req.user?.isAuthor || (req.user?.role !== "admin" && req.user?.role !== "editor")) {
+    return res.status(403).json({
+      error: "Access denied. Administrator privileges required.",
+      code: "FORBIDDEN",
+    });
+  }
+  next();
+}
+
 module.exports = {
   authMiddleware,
+  adminOnly,
   JWT_SECRET,
   createToken,
 };

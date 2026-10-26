@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../../components/sidebars/CategorySidebar';
 import { fetchApi, formatImageUrl } from '../../services/api';
+import DOMPurify from 'dompurify';
+import { ArticleDetailSkeleton } from '../../components/common/Skeleton';
 
 /**
  * Splits article content so 2-4 sentences / initial paragraph can appear
@@ -43,6 +45,7 @@ export default function PostDetailPage() {
   const [article, setArticle] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   // Fallback article data matching HTML specifications
   const defaultArticle = {
@@ -76,6 +79,7 @@ export default function PostDetailPage() {
         const data = await fetchApi(`/news/${activeSlug}`, { skipCache: true });
         if (data && data.title) {
           setArticle(data);
+          setNotFound(false);
           // Increment view count in backend
           fetchApi(`/news/${activeSlug}/view`, { method: 'PATCH' }).catch(() => {});
           // Load related stories (up to 3)
@@ -100,10 +104,22 @@ export default function PostDetailPage() {
             setRelated([]);
           }
         } else {
-          setArticle(defaultArticle);
+          if (routeSlug || querySlug) {
+            setNotFound(true);
+            setArticle(null);
+          } else {
+            setArticle(defaultArticle);
+            setNotFound(false);
+          }
         }
       } catch (e) {
-        setArticle(defaultArticle);
+        if (routeSlug || querySlug) {
+          setNotFound(true);
+          setArticle(null);
+        } else {
+          setArticle(defaultArticle);
+          setNotFound(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -264,6 +280,33 @@ export default function PostDetailPage() {
     };
   }, [current]);
 
+  if (loading) {
+    return <ArticleDetailSkeleton />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-20 font-['Inter',sans-serif]">
+        <div className="w-16 h-16 rounded-full bg-red-50 text-[#c91f26] flex items-center justify-center text-3xl mb-4">
+          <i className="bi bi-file-earmark-x"></i>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold font-['Prompt',sans-serif] text-gray-900 mb-2">
+          Story Not Found
+        </h1>
+        <p className="text-gray-600 max-w-md mb-6 text-sm">
+          The article you are looking for may have been removed, had its name changed, or is temporarily unavailable.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#c91f26] hover:bg-[#a8191f] text-white text-sm font-semibold rounded-lg transition"
+        >
+          <i className="bi bi-arrow-left"></i>
+          Return to Homepage
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-[#fdfbf7]/30 min-h-screen py-6 sm:py-8">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -338,7 +381,7 @@ export default function PostDetailPage() {
                   {contentParts.intro && (
                     <div
                       className="text-gray-850 text-base sm:text-[18px] leading-[1.85] my-6 sm:my-8 space-y-4 article-html-content font-serif [&_p]:mb-4 [&_p]:leading-[1.85] [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
-                      dangerouslySetInnerHTML={{ __html: contentParts.intro }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentParts.intro) }}
                     />
                   )}
 
@@ -365,7 +408,7 @@ export default function PostDetailPage() {
                   {contentParts.rest ? (
                     <div
                       className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
-                      dangerouslySetInnerHTML={{ __html: contentParts.rest }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentParts.rest) }}
                     />
                   ) : contentParts.restParagraphs && contentParts.restParagraphs.length > 0 ? (
                     <>
@@ -403,7 +446,7 @@ export default function PostDetailPage() {
                   {current.content ? (
                     <div
                       className="text-gray-800 text-base sm:text-[17px] leading-[1.8] mb-8 space-y-4 article-html-content [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[#ff4c60] [&_blockquote]:bg-[#f2f2de] [&_blockquote]:p-5 [&_blockquote]:my-6 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_a]:text-[#c91f26] [&_a]:underline [&_img]:rounded-lg [&_img]:my-4 [&_img]:max-w-full [&_b]:font-bold [&_b]:text-gray-950 [&_strong]:font-bold [&_strong]:text-gray-950 [&_*[style*='font-weight']]:font-bold"
-                      dangerouslySetInnerHTML={{ __html: current.content }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(current.content) }}
                     />
                   ) : (
                     <>

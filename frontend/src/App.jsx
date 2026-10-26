@@ -1,11 +1,12 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Preloader from './components/layout/Preloader';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import MainLayout from './components/layout/MainLayout';
+import HomePage from './pages/HomePage';
+import Preloader from './components/layout/Preloader';
+import { TopProgressBar } from './components/common/Skeleton';
 
-// Lazy-loaded pages for optimized bundle splitting & faster page load
-const HomePage = lazy(() => import('./pages/HomePage'));
+// Lazy-loaded secondary pages for optimized bundle splitting
 const AboutPage = lazy(() => import('./pages/static/AboutPage'));
 const ContactPage = lazy(() => import('./pages/static/ContactPage'));
 const NotFoundPage = lazy(() => import('./pages/static/NotFoundPage'));
@@ -31,20 +32,29 @@ const AuthorSettingsPage = lazy(() => import('./pages/author/AuthorSettingsPage'
 
 function App() {
   const [initialLoading, setInitialLoading] = useState(true);
+  const [isFading, setIsFading] = useState(false);
 
-  // Initial site mount preloader matching original HTML egns-preloader behavior
+  // Smooth transition from the preloader once the initial app mount completes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setInitialLoading(false);
+    const fadeTimer = setTimeout(() => {
+      setIsFading(true);
     }, 400);
-    return () => clearTimeout(timer);
+
+    const removeTimer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 700);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
   }, []);
 
   return (
     <ErrorBoundary>
-      {initialLoading && <Preloader fullScreen={true} />}
+      {initialLoading && <Preloader fullScreen={true} fading={isFading} />}
       <BrowserRouter>
-        <Suspense fallback={<Preloader fullScreen={true} />}>
+        <Suspense fallback={<TopProgressBar />}>
           <Routes>
             {/* 1. Public Layout Routes with Persistent Topbar, Header, Footer & Search Drawer */}
             <Route element={<MainLayout />}>

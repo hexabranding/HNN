@@ -1,5 +1,5 @@
 const express = require("express");
-const { authMiddleware } = require("../middleware/auth");
+const { authMiddleware, adminOnly } = require("../middleware/auth");
 const {
   getCategories,
   createCategory,
@@ -11,9 +11,9 @@ const {
 const router = express.Router();
 
 router.get("/", getCategories);
-router.post("/", authMiddleware, createCategory);
-router.put("/:slug", authMiddleware, updateCategory);
-router.delete("/:slug", authMiddleware, deleteCategory);
-router.post("/migrate", authMiddleware, migrateCategories);
+router.post("/", authMiddleware, adminOnly, createCategory);
+router.put("/:slug", authMiddleware, adminOnly, updateCategory);
+router.delete("/:slug", authMiddleware, adminOnly, deleteCategory);
+router.post("/migrate", authMiddleware, adminOnly, migrateCategories);
 
 module.exports = router;

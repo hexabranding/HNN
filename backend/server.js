@@ -133,7 +133,7 @@ async function seedInitialAdmin() {
 }
 
 // Start HTTP server immediately (supports Hostinger & cloud health checkers)
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 HEXA NEWS (HNN) Enterprise Backend running on port ${PORT}`);
   console.log(`   Architecture: Layered MVC (Models, Views/API, Controllers)`);
   console.log(`   Health: http://localhost:${PORT}/api/health\n`);
@@ -145,3 +145,31 @@ connectDB().then((connection) => {
     seedInitialAdmin();
   }
 });
+
+// Process safeguards: prevent abrupt termination on unhandled errors
+process.on("unhandledRejection", (reason) => {
+  console.error("⚠️ Unhandled Promise Rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("💥 Uncaught Exception:", err);
+});
+
+// Graceful shutdown on termination signals
+function gracefulShutdown(signal) {
+  console.log(`\n🛑 Received ${signal}. Gracefully shutting down HEXA NEWS server...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log("✅ Closed MongoDB connection.");
+    } catch {}
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error("⚠️ Forcefully shutting down server after timeout.");
+    process.exit(1);
+  }, 10000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));

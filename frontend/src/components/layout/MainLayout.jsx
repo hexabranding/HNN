@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Topbar from './Topbar';
 import Header from './Header';
 import SearchModal from './SearchModal';
 import Footer from './Footer';
 import BackToTop from './BackToTop';
+import { TopProgressBar } from '../common/Skeleton';
 
 export default function MainLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -27,8 +28,10 @@ export default function MainLayout() {
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* 4. Active Page Content */}
-      <main className="flex-1 w-full">
-        <Outlet />
+      <main className="flex-1 w-full relative">
+        <Suspense fallback={<TopProgressBar />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* 5. Global Footer */}
